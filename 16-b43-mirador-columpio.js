@@ -1,4 +1,4 @@
-/* ===== B43: mirador del mar con árbol gigante, manzanas, pájaros, ardillas y columpio (v2) ===== */
+/* ===== B43: mirador del mar con árbol gigante, manzanas, pájaros, ardillas y columpio (v3) ===== */
 (function(){const st=(n,f)=>{try{f()}catch(e){console.error('[B43] '+n,e)}};const TH=THREE,TAU=Math.PI*2;
 st('mirador',()=>{
 const SWING_IDLE=0,SWING_SEATED=.22;/* columpio: quieto solo; suave cuando alguien se sienta (pon SWING_SEATED=0 para que nunca se mueva) */
@@ -48,7 +48,22 @@ const barkM=MS(0xffffff,{vertexColors:true,flatShading:false,roughness:1});
  g.setAttribute('color',new TH.Float32BufferAttribute(cl,3));g.computeVertexNormals();TG.add(shadow(new TH.Mesh(g,barkM)))}
 const tube=(a,b,r0,r1,par)=>{const d=new TH.Vector3().subVectors(b,a),m=new TH.Mesh(new TH.CylinderGeometry(r1,r0,d.length(),8),barkM);m.position.copy(a).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(new TH.Vector3(0,1,0),d.clone().normalize());(par||TG).add(shadow(m));return m};
 const limb=(p0,p1,p2,r0,r1,n)=>{let prev=p0.clone();const pts=[prev];for(let i=1;i<=n;i++){const t=i/n,u=1-t,q=new TH.Vector3().set(u*u*p0.x+2*u*t*p1.x+t*t*p2.x,u*u*p0.y+2*u*t*p1.y+t*t*p2.y,u*u*p0.z+2*u*t*p1.z+t*t*p2.z);tube(prev,q,r0+(r1-r0)*(i-1)/n,r0+(r1-r0)*i/n);prev=q;pts.push(q)}return pts};
-for(let i=0;i<8;i++){const a=i/8*TAU+.3,L=3.2+rnd()*1.6;const p0=new TH.Vector3(Math.cos(a)*1.3,1.2,Math.sin(a)*1.3),p1=new TH.Vector3(Math.cos(a)*(1.3+L*.5),.45,Math.sin(a)*(1.3+L*.5)),p2=new TH.Vector3(Math.cos(a)*(1.3+L),-.25,Math.sin(a)*(1.3+L));limb(p0,p1,p2,.55,.1,4)}
+/* raíces curvas, gruesas, con raíces secundarias; se hunden en la tierra */
+const ROOTS=[];
+for(let i=0;i<9;i++){const a=i/9*TAU+.3+(rnd()-.5)*.35,L=3.4+rnd()*2.4,w=(rnd()-.5)*1.8,ca=Math.cos(a),sa=Math.sin(a),nx=-sa,nz2=ca;
+ const p0=new TH.Vector3(ca*1.2,1.6,sa*1.2),p1=new TH.Vector3(ca*(1.2+L*.5)+nx*w*.6,.6,sa*(1.2+L*.5)+nz2*w*.6),p2=new TH.Vector3(ca*(1.3+L)+nx*w,-.4,sa*(1.3+L)+nz2*w);
+ const pts=limb(p0,p1,p2,.62,.1,7);ROOTS.push({pts,r0:.62,r1:.1});
+ if(rnd()<.75){const k=3,b=pts[k],rb=.62+(.1-.62)*k/7,a2=a+(rnd()<.5?-1:1)*(.5+rnd()*.3),dx=Math.cos(a2),dz=Math.sin(a2);
+  const q1=new TH.Vector3(b.x+dx*1.1,b.y*.7,b.z+dz*1.1),q2=new TH.Vector3(b.x+dx*2.4,-.35,b.z+dz*2.4);
+  ROOTS.push({pts:limb(b.clone(),q1,q2,rb*.7,.05,5),r0:rb*.7,r1:.05})}}
+const rootQ=(x,z,pad)=>{let top=-1e9,hit=false;const lx=x-X,lz=z-Z;
+ for(const RT of ROOTS){const n=RT.pts.length-1;for(let i=0;i<n;i++){const a=RT.pts[i],b=RT.pts[i+1],abx=b.x-a.x,abz=b.z-a.z;
+  let t=((lx-a.x)*abx+(lz-a.z)*abz)/(abx*abx+abz*abz||1e-6);t=Math.max(0,Math.min(1,t));
+  const d=Math.hypot(lx-a.x-abx*t,lz-a.z-abz*t),rad=RT.r0+(RT.r1-RT.r0)*(i+t)/n,cy=GY+a.y+(b.y-a.y)*t;
+  if(d<rad){const h=cy+Math.sqrt(rad*rad-d*d);if(h>top)top=h}
+  if(pad&&d<rad+pad&&cy+rad>groundH(x,z)+.25)hit=true}}
+ return pad?hit:top};
+const rootTop=(x,z)=>rootQ(x,z,0),rootBlock=(x,z)=>rootQ(x,z,.3);
 /* limbo del columpio: una rama gruesa que sale hacia el mar */
 const SX=X+OX*6.6,SZ=Z+OZ*6.6,SGY=groundH(SX,SZ),PIV=SGY+5.6;
 const E=new TH.Vector3(OX*6.6,PIV+.3-GY,OZ*6.6);
@@ -89,11 +104,13 @@ const SW2={x:SX,z:SZ,y:0,ry:YAW,so:.12,amp:SWING_IDLE,L:LR,gy:SGY,pv,upd:null};
 /* la dirección local +z del columpio es hacia el mar; el asiento se desplaza -sin(a) en z local */
 const swPose2=()=>{const a=SW2.amp>0?Math.sin(time*1.5)*SW2.amp:0;pv.rotation.x=a;const off=-LR*Math.sin(a);SW2.x=SX+Math.sin(YAW)*off;SW2.z=SZ+Math.cos(YAW)*off;SW2.y=PIV-LR*Math.cos(a)+.03-.65};
 SW2.upd=swPose2;swPose2();
-/* ---- bancas de piedra y base del mirador ---- */
+/* ---- piedras del mirador (con colisión) ---- */
+const STN=[];const stHit=(x,z,pad)=>{for(const s of STN)if(Math.hypot(x-s.x,z-s.z)<s.r+pad)return true;return false};
 {const stone=MS(0x8a847a,{roughness:1,flatShading:true});for(let i=0;i<14;i++){const a=i/14*TAU,d=4.4+rnd()*.5,x=X+Math.cos(a)*d,z=Z+Math.sin(a)*d;if(Math.abs(Math.atan2(Math.sin(a-B.a),Math.cos(a-B.a)))<.5)continue;
- const m=new TH.Mesh(new TH.DodecahedronGeometry(.45+rnd()*.35,0),stone);m.position.set(x-X,groundH(x,z)-GY+.12,z-Z);m.rotation.set(rnd()*3,rnd()*3,rnd()*3);m.scale.y=.6;TG.add(shadow(m))}}
-const _ok2=ok;ok=function(x,z,oy){const dx=x-X,dz=z-Z,d=Math.hypot(dx,dz);if(d<6&&d<TR(Math.atan2(dz,dx),.3)+.5)return false;return _ok2(x,z,oy)};
-const _ab2=ablk;ablk=function(x,z){const dx=x-X,dz=z-Z,d=Math.hypot(dx,dz);if(d<7&&d<TR(Math.atan2(dz,dx),.3)+1.6)return true;return _ab2(x,z)};
+ const s=.45+rnd()*.35,m=new TH.Mesh(new TH.DodecahedronGeometry(s,0),stone);m.position.set(x-X,groundH(x,z)-GY+.12,z-Z);m.rotation.set(rnd()*3,rnd()*3,rnd()*3);m.scale.y=.6;TG.add(shadow(m));STN.push({x,z,r:s*.9})}}
+/* ---- colisión del jugador: tronco, piedras y raíces ---- */
+const _ok2=ok;ok=function(x,z,oy){const dx=x-X,dz=z-Z,d=Math.hypot(dx,dz);if(d<6&&d<TR(Math.atan2(dz,dx),.3)+.5)return false;if(d<10&&(stHit(x,z,.38)||rootBlock(x,z)))return false;return _ok2(x,z,oy)};
+const _ab2=ablk;ablk=function(x,z){const dx=x-X,dz=z-Z,d=Math.hypot(dx,dz);if(d<7&&d<TR(Math.atan2(dz,dx),.3)+1.6)return true;if(d<10&&(stHit(x,z,.3)||rootBlock(x,z)))return true;return _ab2(x,z)};
 /* ---- pájaros (modelo detallado, alas articuladas) ---- */
 const mkBird=(cb,cbel,cw,sc,gull)=>{const g=new TH.Group();g.rotation.order='YXZ';const m1=MS(cb,{roughness:.75}),m2=MS(cbel,{roughness:.8}),mw=MS(cw,{roughness:.8,side:TH.DoubleSide}),mo=MS(0xe89a2a,{roughness:.6}),mk=MS(0x3a3430,{roughness:.8});
  const bd=new TH.Group();g.add(bd);
@@ -130,7 +147,16 @@ const mkSq=()=>{const g=new TH.Group();g.rotation.order='YXZ';const fur=MS(0xa86
  const legs=[];for(const [x,z,big] of[[-.07,.15,0],[.07,.15,0],[-.085,-.12,1],[.085,-.12,1]]){const lg=new TH.Group();lg.position.set(x,-.02,z);body.add(lg);S(SP,fur,0,-.035,0,big?.045:.032,big?.065:.05,big?.07:.045,lg);S(SP,dk,0,-.08,.02,big?.04:.03,.018,big?.07:.04,lg);legs.push(lg)}
  const tl=new TH.Group();tl.position.set(0,.03,-.2);body.add(tl);const tails=[];for(let i=0;i<8;i++){const t=i/7,r=.045+.085*Math.sin(Math.min(1,t*1.15)*2.4)*.9+.01,o=S(SP,i<6?fur:tipc,0,.0+.4*t-.0,-.03-.13*Math.sin(t*2.7),r,r*1.1,r*1.35,tl);o.position.y=.05+.42*t;o.position.z=-.04-.16*Math.sin(t*2.6)+.12*t*t;tails.push(o)}
  g.scale.setScalar(1.75);scene.add(g);return{g,body,head,legs,tl}};
-const SQ=[];for(let i=0;i<3;i++){const q=mkSq();SQ.push({q,s:'wait',t:1+i*2.2,th:rnd()*TAU,route:null,k:0,dir:1,sp:2.1+rnd()*.7,ph:rnd()*9,gx:0,gz:0,pause:0,qt:new TH.Quaternion()});q.g.visible=true}
+/* movimiento de ardillas en el suelo: rodean piedras y tronco, giran suave, pasan por encima de las raíces */
+const sqY=(x,z)=>Math.max(groundH(x,z),rootTop(x,z));
+const sqFree=(x,z)=>{if(stHit(x,z,.22))return false;const dx=x-X,dz=z-Z;return Math.hypot(dx,dz)>TR(Math.atan2(dz,dx),0)-.05};
+const sqStep=(o,g,tx,tz,sp,dt)=>{const dx=tx-g.position.x,dz=tz-g.position.z,L=Math.hypot(dx,dz);if(L<1e-4)return 0;
+ const base=Math.atan2(dz,dx),st=Math.min(sp*dt,L);if(!o.side)o.side=Math.random()<.5?1:-1;let ang=base,moved=false;
+ for(let k=0;k<=12&&!moved;k++){for(const sg of(k?[o.side,-o.side]:[1])){const an=base+sg*k*.26,nx=g.position.x+Math.cos(an)*st,nz=g.position.z+Math.sin(an)*st;
+  if(L<.5||sqFree(nx,nz)){if(k)o.side=sg;g.position.x=nx;g.position.z=nz;ang=an;moved=true;break}}}
+ const ty=Math.atan2(Math.cos(ang),Math.sin(ang));o.yw=o.yw||0;o.yw+=Math.atan2(Math.sin(ty-o.yw),Math.cos(ty-o.yw))*Math.min(1,dt*10);return L};
+const SQ=[];for(let i=0;i<3;i++){const q=mkSq();SQ.push({q,s:'wait',t:1+i*2.2,th:rnd()*TAU,route:null,k:0,dir:1,sp:2.1+rnd()*.7,ph:rnd()*9,gx:0,gz:0,pause:0,qt:new TH.Quaternion()});q.g.visible=true;
+ {const o=SQ[SQ.length-1];o.yw=0;for(let k=0;k<30;k++){o.th=rnd()*TAU;const r=TR(o.th,0)+1.2;q.g.position.set(X+Math.cos(o.th)*r,0,Z+Math.sin(o.th)*r);if(!stHit(q.g.position.x,q.g.position.z,.5))break}q.g.position.y=sqY(q.g.position.x,q.g.position.z)}}
 const mkRoute=(L)=>{const R=[];const trunkTop=L?L.h0:20,a0=L?L.a:rnd()*TAU,hs=L?L.h0:19.5;
  for(let h=0;h<=hs;h+=.4){const ang=a0-(hs-h)*.2,rr=(h<14?TR(ang,h):.85-(h-14)*.08)+.11;R.push({p:new TH.Vector3(Math.cos(ang)*rr,h,Math.sin(ang)*rr),n:new TH.Vector3(Math.cos(ang),0,Math.sin(ang))})}
  if(L){const n=L.pts.length-1;for(let i=1;i<=n;i++){const q=L.pts[i],rad=L.r0+(L.r1-L.r0)*i/n,d=Math.hypot(q.x,q.z);if(d<TR(Math.atan2(q.z,q.x),q.y)+.05)continue;R.push({p:new TH.Vector3(q.x,q.y+rad+.1,q.z),n:new TH.Vector3(0,1,0)})}
@@ -191,23 +217,25 @@ let T=0;const _e=EXTRA;EXTRA=function(dt){_e(dt);try{
  const Q4=new TH.Quaternion(),P_={p:new TH.Vector3(),n:new TH.Vector3()},P2={p:new TH.Vector3(),n:new TH.Vector3()};
  for(const o of SQ){const q=o.q,g=q.g;o.t-=dt;
   const gait=(sp,mv)=>{const w=t*sp+o.ph;q.legs[0].rotation.x=Math.sin(w)*.7*mv;q.legs[1].rotation.x=Math.sin(w+.5)*.7*mv;q.legs[2].rotation.x=Math.sin(w+Math.PI)*.8*mv;q.legs[3].rotation.x=Math.sin(w+Math.PI+.5)*.8*mv;q.body.rotation.x=Math.sin(w*2)*.04*mv;q.tl.rotation.x=(mv?Math.sin(w)*.07:Math.sin(t*3+o.ph)*.18)-.1};
-  if(o.s==='wait'){const ang=o.th,r=TR(ang,0)+.9;g.position.set(X+Math.cos(ang)*r,groundH(X+Math.cos(ang)*r,Z+Math.sin(ang)*r),Z+Math.sin(ang)*r);g.quaternion.identity();g.rotation.set(0,Math.atan2(-Math.cos(ang),-Math.sin(ang))+Math.PI+Math.sin(t*.7+o.ph)*.4,0);gait(8,0);q.head.rotation.y=Math.sin(t*1.3+o.ph)*.5;q.head.rotation.x=Math.sin(t*2.1+o.ph)*.12;
+  if(o.s==='wait'){g.quaternion.identity();g.position.y=sqY(g.position.x,g.position.z);g.rotation.set(0,o.yw+Math.sin(t*.7+o.ph)*.4,0);gait(8,0);q.head.rotation.y=Math.sin(t*1.3+o.ph)*.5;q.head.rotation.x=Math.sin(t*2.1+o.ph)*.12;
    if(o.t<=0){const L=Math.random()<.3?null:LIMBS[Math.floor(Math.random()*LIMBS.length)];o.route=mkRoute(L);o.s='approach';o.th=Math.atan2(o.route[0].p.z,o.route[0].p.x)}}
-  else if(o.s==='approach'){const r0=o.route[0].p,tx=X+r0.x,tz=Z+r0.z,dx=tx-g.position.x,dz=tz-g.position.z,L=Math.hypot(dx,dz);g.quaternion.identity();
-   if(L>.25){const sp=3.2*dt;g.position.x+=dx/L*sp;g.position.z+=dz/L*sp;g.position.y=groundH(g.position.x,g.position.z)+Math.abs(Math.sin(t*13+o.ph))*.1;g.rotation.set(0,Math.atan2(dx,dz),0);gait(13,1)}
-   else{o.s='climb';o.k=0;o.dir=1}}
+  else if(o.s==='approach'){const r0=o.route[0].p;g.quaternion.identity();const L=sqStep(o,g,X+r0.x,Z+r0.z,3.2,dt);
+   if(L>.3){g.position.y=sqY(g.position.x,g.position.z)+Math.abs(Math.sin(t*13+o.ph))*.1;g.rotation.set(0,o.yw,0);gait(13,1)}else{o.s='climb';o.k=0;o.dir=1}}
   else if(o.s==='climb'||o.s==='back'){const fw=o.s==='climb';o.k+=dt*o.sp*(fw?1:1.15);if(o.k>=o.route.len)o.k=o.route.len;
    routeAt(o.route,o.k,P_);routeAt(o.route,o.k+(fw?.35:-.35),P2);
    const f=new TH.Vector3().subVectors(P2.p,P_.p);if(!fw)f.multiplyScalar(1);if(f.lengthSq()<1e-6)f.set(0,1,0);f.normalize();const n=P_.n.clone();n.addScaledVector(f,-n.dot(f)).normalize();const rt=new TH.Vector3().crossVectors(n,f).normalize();M4.makeBasis(rt,n,f);Q4.setFromRotationMatrix(M4);g.quaternion.slerp(Q4,Math.min(1,dt*10));
    g.position.set(X+P_.p.x,GY+P_.p.y,Z+P_.p.z).addScaledVector(n,.0);gait(15,1);q.head.rotation.set(Math.sin(t*3+o.ph)*.06,0,0);
    if(fw&&o.k>=o.route.len){o.s='hold';o.t=3+Math.random()*5}
-   else if(!fw&&o.k<=.05){o.s='ground';o.t=2.5+Math.random()*3;o.run=0;o.pause=0;const a=o.th+(Math.random()-.5)*2.2,dd=4.5+Math.random()*4;o.gx=X+Math.cos(a)*dd;o.gz=Z+Math.sin(a)*dd}
+   else if(!fw&&o.k<=.05){o.s='ground';o.t=2.5+Math.random()*3;o.run=0;o.pause=0;for(let k=0;k<10;k++){const a=o.th+(Math.random()-.5)*2.6,dd=4.5+Math.random()*4;o.gx=X+Math.cos(a)*dd;o.gz=Z+Math.sin(a)*dd;if(!stHit(o.gx,o.gz,.6))break}}
    if(fw&&o.k>2&&o.k<o.route.len-3&&!o.mid&&Math.random()<dt*.15){o.mid=1;o.s='rest';o.t=1.2+Math.random()*2}}
   else if(o.s==='rest'){gait(8,0);q.head.rotation.y=Math.sin(t*2+o.ph)*.6;if(o.t<=0){o.s='climb';o.mid=0}}
   else if(o.s==='hold'){gait(8,0);q.head.rotation.y=Math.sin(t*1.6+o.ph)*.7;if(o.t<=0){o.s='back'}}
-  else if(o.s==='ground'){const tx=o.run===0?o.gx:X+Math.cos(o.th)*(TR(o.th,0)+.9),tz=o.run===0?o.gz:Z+Math.sin(o.th)*(TR(o.th,0)+.9),dx=tx-g.position.x,dz=tz-g.position.z,L=Math.hypot(dx,dz);g.quaternion.identity();
-   if(L>.3){const sp=3*dt;const nx=g.position.x+dx/L*sp,nz2=g.position.z+dz/L*sp;if(!ablk(nx,nz2)||Math.hypot(nx-X,nz2-Z)>TR(Math.atan2(nz2-Z,nx-X),0)+.7){g.position.x=nx;g.position.z=nz2}else{o.run=1}g.position.y=groundH(g.position.x,g.position.z)+Math.abs(Math.sin(t*13+o.ph))*.1;g.rotation.set(0,Math.atan2(dx,dz),0);gait(13,1)}
-   else{g.position.y=groundH(g.position.x,g.position.z);g.rotation.set(0,Math.atan2(dx,dz),0);gait(8,0);if(o.run===0){o.pause+=dt;q.head.rotation.x=.35;if(o.pause>2.2){o.pause=0;o.run=1;q.head.rotation.x=0}}else{o.s='wait';o.t=2+Math.random()*4;o.th=Math.atan2(g.position.z-Z,g.position.x-X)}}}}
+  else if(o.s==='ground'){const rr=TR(o.th,0)+.9,tx=o.run===0?o.gx:X+Math.cos(o.th)*rr,tz=o.run===0?o.gz:Z+Math.sin(o.th)*rr;g.quaternion.identity();
+   const L=sqStep(o,g,tx,tz,3,dt);
+   if(L>.3){g.position.y=sqY(g.position.x,g.position.z)+Math.abs(Math.sin(t*13+o.ph))*.1;g.rotation.set(0,o.yw,0);gait(13,1)}
+   else{g.position.y=sqY(g.position.x,g.position.z);g.rotation.set(0,o.yw,0);gait(8,0);
+    if(o.run===0){o.pause+=dt;q.head.rotation.x=.35;if(o.pause>2.2){o.pause=0;o.run=1;q.head.rotation.x=0}}
+    else{o.s='wait';o.t=2+Math.random()*4;o.th=Math.atan2(g.position.z-Z,g.position.x-X)}}}}
 /* rayos y reflejo */
  const sy=(typeof sunDir!=='undefined')?sunDir.y:0,ns=(typeof ENV!=='undefined')?ENV.ns:0,rk=Math.max(0,Math.min(1,(sy-.06)*3.5))*(1-ns);
  for(const m of RAYS){const v=rk>.02&&d<120;m.visible=v;if(!v)continue;const dir=V.set(-sunDir.x,-sunDir.y,-sunDir.z).normalize();m.position.set(X+m.userData.o.x,GY+m.userData.o.y,Z+m.userData.o.z).addScaledVector(dir,7.5);m.quaternion.setFromUnitVectors(mn.set(0,1,0),dir);if(m.userData.k)m.rotateY(Math.PI/2);m.material.opacity=rk*(.1+.05*Math.sin(t*.7+m.userData.o.x))}
