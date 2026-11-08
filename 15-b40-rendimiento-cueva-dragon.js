@@ -34,12 +34,17 @@ try{const bx=new TH.Box3(),sz=new TH.Vector3(),cc=new TH.Vector3(),mt=new TH.Mat
  const scan=(o,d)=>{if(!o||keep.has(o)||o.isLight||o.isCamera||o.isSprite||o.isLine||o.isPoints||o.visible===false)return;
   if(o.isInstancedMesh){let ch=false;
    for(let i=0;i<o.count;i++){o.getMatrixAt(i,mt);pp.setFromMatrixPosition(mt).applyMatrix4(o.matrixWorld);
-    if(pp.y<C.y+30&&bad(pp.x,pp.z)){mt.scale(Z0);o.setMatrixAt(i,mt);ch=true;hid.push([pp.x,pp.z])}}
+    if(pp.y<C.y+30&&bad(pp.x,pp.z)){mt.scale(Z0);o.setMatrixAt(i,mt);ch=true;if(o.count<=1500)hid.push([pp.x,pp.z])}}
    if(ch)o.instanceMatrix.needsUpdate=true;return}
   bx.setFromObject(o);if(bx.isEmpty())return;bx.getSize(sz);bx.getCenter(cc);
   if(sz.x>34||sz.z>34||sz.y>50){if(d<5)for(const c of o.children.slice())scan(c,d+1);return}
   if(cc.y<C.y+30&&bad(cc.x,cc.z)&&Math.hypot(cc.x-p.x,cc.z-p.z)>1.5){o.visible=false;hid.push([cc.x,cc.z])}};
  for(const o of scene.children.slice())scan(o,0)}catch(e){console.error('[B40] limpiar',e)}
+/* lo que se ocultó ya no debe colisionar (si no, queda una pared invisible, sobre todo frente a la puerta) */
+const badP=(x,z)=>fe(x,z,1)<1||(Math.abs(x-C.x)<3.8&&z>C.z+RZ-3&&z<C.z+RZ+RL);
+try{const near=(x,z)=>hid.some(h=>Math.abs(h[0]-x)<2.5&&Math.abs(h[1]-z)<2.5);
+ for(let i=trees.length-1;i>=0;i--){const t=trees[i];if(badP(t.x,t.z)&&near(t.x,t.z))trees.splice(i,1)}
+ for(let i=SOL.length-1;i>=0;i--){const q=SOL[i];if(badP(q[0],q[1])&&near(q[0],q[1]))SOL.splice(i,1)}}catch(e){}
 /* lo que no se pudo ocultar dentro de la cueva se vuelve obstáculo sólido (así nunca se atraviesa nada visible) */
 try{const inner=[];
  for(const t of trees)if(fe(t.x,t.z,1.5)<1)inner.push([t.x-C.x,t.z-C.z,Math.min(2,Math.max(.7,+t.r||+t.rad||1))]);
@@ -152,7 +157,7 @@ for(let i=0;i<18;i++){const t=i/17,th=Math.PI*(1.5-.95*t);DD.push([Math.cos(th)*
 const DC=DD.map(([x,z,r])=>[x*cr+z*sr,DZ-x*sr+z*cr,r]);
 const inDr=(lx,lz,m)=>{for(const c of DC)if(Math.hypot(lx-c[0],lz-c[1])<c[2]+m)return true;return false};
 const inPR=(lx,lz)=>{for(const c of PR){const dx=lx-c[0],dz=lz-c[1];if(Math.abs(dx)<c[2]&&Math.abs(dz)<c[2]&&dx*dx+dz*dz<c[2]*c[2])return true}return false};
-const gapZ=(lx,lz)=>lz>RZ-5&&lz<RZ+RL&&Math.abs(lx)<3.2;
+const gapZ=(lx,lz)=>lz>RZ-5&&lz<RZ+RL&&Math.abs(lx)<3.5;
 /* rr<1: dentro; banda de pared = rr dentro de kf±.035 (ancho real de la roca) */
 const rr=(lx,lz)=>{const u=lx/RX,w=lz/RZ,r=Math.hypot(u,w)||1e-6;return[r,kf(u/r,0,w/r)]};
 const _ok=ok;ok=function(x,z,oy){const lx=x-C.x,lz=z-C.z;
