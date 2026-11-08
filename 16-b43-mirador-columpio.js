@@ -1,6 +1,7 @@
-/* ===== B43: mirador del mar con árbol gigante, manzanas, pájaros, ardillas y columpio profesional ===== */
+/* ===== B43: mirador del mar con árbol gigante, manzanas, pájaros, ardillas y columpio (v2) ===== */
 (function(){const st=(n,f)=>{try{f()}catch(e){console.error('[B43] '+n,e)}};const TH=THREE,TAU=Math.PI*2;
 st('mirador',()=>{
+const SWING_IDLE=0,SWING_SEATED=.22;/* columpio: quieto solo; suave cuando alguien se sienta (pon SWING_SEATED=0 para que nunca se mueva) */
 const rnd=(()=>{let s=1337;return()=>(s=(s*16807)%2147483647)/2147483647})();
 const nz=(x,y)=>Math.sin(x*1.7+y*.9)*Math.cos(y*1.3-x*.6)*.5+Math.sin(x*4.1+y*2.3)*.25;
 const TR=(a,y)=>{y=Math.max(0,y);const b=2.0-1.15*Math.min(1,y/14);return b*(1+.09*nz(a*3.1,y*.8)+.05*Math.sin(a*9+y*1.2))*(1+.75*Math.exp(-y/1.7)*(.55+.45*Math.sin(a*6+1)))};
@@ -15,11 +16,27 @@ for(let a=0;a<TAU;a+=.05){const d=R-44,x=Math.cos(a)*d,z=Math.sin(a)*d;
  const sc=(mx-mn)+bad*1.5;if(!B||sc<B.sc)B={x,z,a,sc}}
 if(!B)return;
 const X=B.x,Z=B.z,GY=groundH(X,Z),OX=Math.cos(B.a),OZ=Math.sin(B.a),YAW=Math.atan2(OX,OZ);
-const fe=(x,z,m)=>Math.hypot(x-X,z-Z)/m;
-for(let i=trees.length-1;i>0;i--)if(fe(trees[i].x,trees[i].z,17)<1)trees.splice(i,1);
-for(let i=SOL.length-1;i>=0;i--){const q=SOL[i];if(q[3]!==1&&fe(q[0],q[1],14)<1)SOL.splice(i,1)}
-try{const bx=new TH.Box3(),sz=new TH.Vector3();scene.children.slice().forEach(o=>{if(o.isLight||o.isCamera||o.isSprite||o.isLine||o.isPoints)return;if(o.position.lengthSq()<4||o.position.y>40)return;
- if(fe(o.position.x,o.position.z,15)>=1)return;bx.setFromObject(o);bx.getSize(sz);if(sz.x>30||sz.z>30)return;o.visible=false})}catch(e){}
+/* ---- limpiar el sitio: oculta de verdad árboles/arbustos/rocas (sueltos, en grupos o instanciados) y quita solo su colisión ---- */
+const hid=[];
+try{const bx=new TH.Box3(),sz=new TH.Vector3(),cc=new TH.Vector3(),m4=new TH.Matrix4(),Z0=new TH.Vector3(0,0,0),pp=new TH.Vector3(),keep=new Set();
+ const addK=a=>{if(a){if(a.g)keep.add(a.g);if(a.m)keep.add(a.m);if(a.mesh)keep.add(a.mesh)}};
+ try{for(const l of lists())for(const a of l)addK(a)}catch(e){}
+ try{for(const v of window.__BL.VIL)addK(v)}catch(e){}
+ try{for(const v of ELV)addK(v)}catch(e){}
+ const bad=(x,z)=>Math.hypot(x-X,z-Z)<15;
+ scene.updateMatrixWorld(true);
+ const scan=(o,d)=>{if(!o||keep.has(o)||o.isLight||o.isCamera||o.isSprite||o.isLine||o.isPoints||o.visible===false)return;
+  if(o.isInstancedMesh){let ch=false;
+   for(let i=0;i<o.count;i++){o.getMatrixAt(i,m4);pp.setFromMatrixPosition(m4).applyMatrix4(o.matrixWorld);
+    if(pp.y<GY+40&&bad(pp.x,pp.z)){m4.scale(Z0);o.setMatrixAt(i,m4);ch=true;hid.push([pp.x,pp.z])}}
+   if(ch)o.instanceMatrix.needsUpdate=true;return}
+  bx.setFromObject(o);if(bx.isEmpty())return;bx.getSize(sz);bx.getCenter(cc);
+  if(sz.x>34||sz.z>34||sz.y>60){if(d<5)for(const c of o.children.slice())scan(c,d+1);return}
+  if(cc.y<GY+40&&bad(cc.x,cc.z)&&Math.hypot(cc.x-p.x,cc.z-p.z)>1.5){o.visible=false;hid.push([cc.x,cc.z])}};
+ for(const o of scene.children.slice())scan(o,0)}catch(e){console.error('[B43] limpiar',e)}
+try{const near=(x,z)=>hid.some(h=>Math.abs(h[0]-x)<2.5&&Math.abs(h[1]-z)<2.5);
+ for(let i=trees.length-1;i>=0;i--){const t=trees[i];if(Math.hypot(t.x-X,t.z-Z)<15&&near(t.x,t.z))trees.splice(i,1)}
+ for(let i=SOL.length-1;i>=0;i--){const q=SOL[i];if(q[3]!==1&&Math.hypot(q[0]-X,q[1]-Z)<15&&near(q[0],q[1]))SOL.splice(i,1)}}catch(e){}
 const TG=new TH.Group();TG.position.set(X,GY,Z);scene.add(TG);
 const MS=(c,o)=>new TH.MeshStandardMaterial(Object.assign({color:c,roughness:.92},o));
 const shadow=m=>{m.castShadow=true;m.receiveShadow=true;return m};
@@ -36,11 +53,11 @@ for(let i=0;i<8;i++){const a=i/8*TAU+.3,L=3.2+rnd()*1.6;const p0=new TH.Vector3(
 const SX=X+OX*6.6,SZ=Z+OZ*6.6,SGY=groundH(SX,SZ),PIV=SGY+5.6;
 const E=new TH.Vector3(OX*6.6,PIV+.3-GY,OZ*6.6);
 const swPts=limb(new TH.Vector3(OX*.6,3.6,OZ*.6),new TH.Vector3(OX*3.2,6.6,OZ*3.2),E,.72,.2,10);
-/* ramas del dosel */
+/* ramas del dosel. Las perchas quedan justo sobre la rama (patas apoyadas, sin hundirse) */
 const perches=[];const LIMBS=[];const canopy=new TH.Group();TG.add(canopy);
 for(let i=0;i<9;i++){const a=i/9*TAU+rnd()*.5,h0=7+rnd()*3.5,len=6+rnd()*5,h1=h0+4+rnd()*4;const p0=new TH.Vector3(Math.cos(a)*.7,h0,Math.sin(a)*.7),p1=new TH.Vector3(Math.cos(a)*len*.5,h0+2.4,Math.sin(a)*len*.5),p2=new TH.Vector3(Math.cos(a)*len,h1,Math.sin(a)*len);
- const pts=limb(p0,p1,p2,.42,.08,6);LIMBS.push({pts,a,h0,r0:.42,r1:.08});if(i<8){const q=pts[4];perches.push(new TH.Vector3(q.x+X,q.y+GY+.14,q.z+Z))}}
-for(const q of swPts.slice(4,10,2))perches.push(new TH.Vector3(q.x+X,q.y+GY+.2,q.z+Z));
+ const pts=limb(p0,p1,p2,.42,.08,6);LIMBS.push({pts,a,h0,r0:.42,r1:.08});if(i<8){const q=pts[4],rd=.42+(.08-.42)*4/6;perches.push(new TH.Vector3(q.x+X,q.y+GY+rd+.32,q.z+Z))}}
+swPts.slice(4,10).forEach((q,i)=>{if(i%2)return;const rd=.72+(.2-.72)*(i+4)/10;perches.push(new TH.Vector3(q.x+X,q.y+GY+rd+.32,q.z+Z))});
 tube(new TH.Vector3(0,13.4,0),new TH.Vector3(0,20.5,0),.8,.28);
 /* ---- follaje instanciado ---- */
 const NC=190,fg=new TH.IcosahedronGeometry(1,2),fm=MS(0xffffff,{roughness:.85,flatShading:false}),fol=new TH.InstancedMesh(fg,fm,NC),mt=new TH.Matrix4(),qt=new TH.Quaternion(),ps_=new TH.Vector3(),sc_=new TH.Vector3(),col=new TH.Color();
@@ -55,7 +72,7 @@ for(let i=0;i<NA;i++){const c=CC[Math.floor(rnd()*CC.length)],a=rnd()*TAU,dx=Mat
  ps_.set(c.x+dx/L*c.r*.93,c.y+dy/L*c.r*.8,c.z+dz/L*c.r*.93);qt.identity();sc_.set(1,.92,1);mt.compose(ps_,qt,sc_);apl.setMatrixAt(i,mt);col.setHex(rnd()<.8?0xd2222a:0xe8a020);col.multiplyScalar(.85+rnd()*.25);apl.setColorAt(i,col)}
 for(let i=0;i<10;i++){const a=rnd()*TAU,d=3.5+rnd()*5,x=X+Math.cos(a)*d,z=Z+Math.sin(a)*d;ps_.set(x-X,groundH(x,z)-GY+.2,z-Z);qt.identity();sc_.set(1,.92,1);mt.compose(ps_,qt,sc_);apl.setMatrixAt(NA+i,mt);col.setHex(0xb81e24);apl.setColorAt(NA+i,col)}
 apl.instanceMatrix.needsUpdate=true;apl.instanceColor.needsUpdate=true;apl.castShadow=true;canopy.add(apl);
-/* ---- columpio profesional de madera y cuerda ---- */
+/* ---- columpio de madera y cuerda ---- */
 const SG=new TH.Group();SG.position.set(SX,PIV,SZ);SG.rotation.y=YAW;scene.add(SG);
 const wood=MS(0x9a6a3c,{roughness:.8}),woodD=MS(0x6a4526,{roughness:.85}),rope=MS(0xd9c293,{roughness:1}),iron=MS(0x2b2b30,{roughness:.45,metalness:.7});
 const pv=new TH.Group();SG.add(pv);const LR=3.9,SW_W=1.05;
@@ -68,11 +85,9 @@ for(const sx of[-1,1]){const x=sx*(SW_W/2-.05);
  for(const sx of[-1,1]){const e=new TH.Mesh(new TH.BoxGeometry(.07,.09,.64),woodD);e.position.set(sx*(SW_W/2-.06),-.05,0);seat.add(shadow(e))}
  for(const sx of[-1,1]){const r=new TH.Mesh(new TH.BoxGeometry(.05,.5,.05),woodD);r.position.set(sx*(SW_W/2-.03),.22,-.3);seat.add(r)}
  const back=new TH.Mesh(new TH.BoxGeometry(SW_W-.1,.07,.05),wood);back.position.set(0,.42,-.3);seat.add(shadow(back))}
-const SW2={x:SX,z:SZ,y:0,ry:YAW,so:.12,amp:.06,L:LR,gy:SGY,pv,upd:null};
-const swPose=()=>{const a=Math.sin(time*1.5)*SW2.amp;pv.rotation.x=a;
- SW2.x=SX+Math.sin(YAW)*(-LR*Math.sin(a))*-1*-1;SW2.z=SZ+Math.cos(YAW)*(-LR*Math.sin(a));SW2.y=PIV-LR*Math.cos(a)+.03-.65};
+const SW2={x:SX,z:SZ,y:0,ry:YAW,so:.12,amp:SWING_IDLE,L:LR,gy:SGY,pv,upd:null};
 /* la dirección local +z del columpio es hacia el mar; el asiento se desplaza -sin(a) en z local */
-const swPose2=()=>{const a=Math.sin(time*1.5)*SW2.amp;pv.rotation.x=a;const off=-LR*Math.sin(a);SW2.x=SX+Math.sin(YAW)*off;SW2.z=SZ+Math.cos(YAW)*off;SW2.y=PIV-LR*Math.cos(a)+.03-.65};
+const swPose2=()=>{const a=SW2.amp>0?Math.sin(time*1.5)*SW2.amp:0;pv.rotation.x=a;const off=-LR*Math.sin(a);SW2.x=SX+Math.sin(YAW)*off;SW2.z=SZ+Math.cos(YAW)*off;SW2.y=PIV-LR*Math.cos(a)+.03-.65};
 SW2.upd=swPose2;swPose2();
 /* ---- bancas de piedra y base del mirador ---- */
 {const stone=MS(0x8a847a,{roughness:1,flatShading:true});for(let i=0;i<14;i++){const a=i/14*TAU,d=4.4+rnd()*.5,x=X+Math.cos(a)*d,z=Z+Math.sin(a)*d;if(Math.abs(Math.atan2(Math.sin(a-B.a),Math.cos(a-B.a)))<.5)continue;
@@ -88,7 +103,7 @@ const mkBird=(cb,cbel,cw,sc,gull)=>{const g=new TH.Group();g.rotation.order='YXZ
  const head=new TH.Group();head.position.set(0,.085,.2);bd.add(head);const hs=new TH.Mesh(new TH.SphereGeometry(.088,12,10),m1);head.add(hs);
  const bk=new TH.Mesh(new TH.ConeGeometry(gull?.03:.025,gull?.14:.1,6),mo);bk.rotation.x=Math.PI/2;bk.position.set(0,-.005,.12);head.add(bk);
  for(const s of[-1,1]){const e=new TH.Mesh(new TH.SphereGeometry(.018,8,6),new TH.MeshBasicMaterial({color:0x080808}));e.position.set(s*.06,.02,.055);head.add(e)}
- const tp=[-.045,0,0,.045,0,0,-.09,0,-.26,.09,0,-.26,0,0,-.3],tg=new TH.BufferGeometry();tg.setAttribute('position',new TH.Float32BufferAttribute([-.045,0,0,.045,0,0,-.1,0,-.28,-.045,0,0,-.1,0,-.28,0,0,-.31,-.045,0,0,0,0,-.31,.1,0,-.28,-.045,0,0,.1,0,-.28,.045,0,0],3));tg.computeVertexNormals();
+ const tg=new TH.BufferGeometry();tg.setAttribute('position',new TH.Float32BufferAttribute([-.045,0,0,.045,0,0,-.1,0,-.28,-.045,0,0,-.1,0,-.28,0,0,-.31,-.045,0,0,0,0,-.31,.1,0,-.28,-.045,0,0,.1,0,-.28,.045,0,0],3));tg.computeVertexNormals();
  const tail=new TH.Mesh(tg,mw);tail.position.set(0,.0,-.2);tail.rotation.x=.12;bd.add(tail);
  const legs=[];for(const s of[-1,1]){const lg=new TH.Group();lg.position.set(s*.05,-.1,.02);const l=new TH.Mesh(new TH.CylinderGeometry(.01,.01,.12,5),mo);l.position.y=-.06;lg.add(l);const ft=new TH.Mesh(new TH.BoxGeometry(.035,.012,.07),mo);ft.position.set(0,-.12,.02);lg.add(ft);bd.add(lg);legs.push(lg)}
  const wings=[];for(const s of[-1,1]){const W=new TH.Group();W.position.set(s*.1,.06,.03);bd.add(W);
@@ -97,10 +112,14 @@ const mkBird=(cb,cbel,cw,sc,gull)=>{const g=new TH.Group();g.rotation.order='YXZ
   wings.push({W,O,s})}
  g.scale.setScalar(sc||1.3);scene.add(g);return{g,bd,head,wings,legs}};
 const foldWings=(b,k)=>{for(const w of b.wings){w.W.rotation.set(0,w.s*1.4*k,w.s*-.12*k);w.O.rotation.set(0,w.s*-.4*k,0);w.W.scale.set(1-.45*k,1,1-.1*k)}};
-const flapWings=(b,ph,amp,sp)=>{for(const w of b.wings){const a=Math.sin(ph)*amp;w.W.scale.set(1,1,1);w.W.rotation.set(0,0,w.s*a);w.O.rotation.set(0,0,w.s*(Math.sin(ph-.9)*amp*.7))}};
+/* aleteo: bajada rápida, subida con el ala algo plegada y el cuerpo sube y baja con cada golpe */
+const flapWings=(b,ph,amp)=>{const sn=Math.sin(ph),cs=Math.cos(ph);for(const w of b.wings){w.W.scale.set(1-.18*Math.max(0,cs),1,1);w.W.rotation.set(0,0,w.s*(amp*sn+.1));w.O.rotation.set(0,0,w.s*Math.sin(ph-.9)*amp*.7)}b.bd.position.y=amp>.3?.025*sn:0};
+const glideWings=(b,a)=>{a=a||.1;for(const w of b.wings){w.W.scale.set(1,1,1);w.W.rotation.set(0,0,w.s*a);w.O.rotation.set(0,0,w.s*a*.4)}b.bd.position.y=0};
 const BR=[];const pal=[[0x7a4a2a,0xe8832a,0x5a3a22],[0x3a6ad0,0xf0f0f0,0x2a4a9a],[0x6a6a72,0xd8b8a0,0x4a4a52],[0xd8a020,0xf8e070,0x7a6a30],[0x8a5a3a,0xf0e0cc,0x6a4a30],[0x2a8a5a,0xe8f0b0,0x1a6a40],[0xb04030,0xf0c8b0,0x803020]];
 for(let i=0;i<7;i++){const P=pal[i%pal.length],b=mkBird(P[0],P[1],P[2],1.45);const pr=Math.floor(rnd()*perches.length);BR.push({b,pr,st:'perch',t:2+rnd()*9,ph:rnd()*9,yaw:rnd()*TAU});b.g.position.copy(perches[pr]);b.g.rotation.y=BR[BR.length-1].yaw;foldWings(b,1)}
 const GL=[];for(let i=0;i<3;i++){const b=mkBird(0xf8f8f8,0xffffff,0xe4e8ee,2.4,true);GL.push({b,a:i/3*TAU,rr:20+i*7,h:26+i*3,sp:.17+i*.03,ph:i*2})}
+/* trayectoria de vuelo: arco alrededor del árbol (coordenadas polares), nunca atraviesa el tronco */
+const flyPos=(o,e,out)=>{const s=Math.sin(Math.PI*e),ang=o.a1+o.da*e,y=o.from.y+(o.to.y-o.from.y)*e+s*o.arch;let r=o.r1+(o.r2-o.r1)*e+s*o.bulge;const mrad=TR(ang,y-GY)+1.3*Math.min(1,Math.min(e,1-e)*6);if(r<mrad)r=mrad;out.set(X+Math.cos(ang)*r,y,Z+Math.sin(ang)*r);return out};
 /* ---- ardillas: recorren tronco, ramas y copa ---- */
 const mkSq=()=>{const g=new TH.Group();g.rotation.order='YXZ';const fur=MS(0xa8602c,{roughness:.92}),belly=MS(0xecd6ae,{roughness:.92}),dk=MS(0x4a2a14,{roughness:.9}),tipc=MS(0xd9a068,{roughness:.95});
  const S=(geo,m,x,y,z,sx,sy,sz,par)=>{const o=new TH.Mesh(geo,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);(par||g).add(o);return o};const SP=new TH.SphereGeometry(1,12,10);
@@ -142,25 +161,32 @@ try{const _cp=camPhase;camPhase=function(dt,tx,ty,tz){const r=_cp(dt,tx,ty,tz);t
 const V=new TH.Vector3(),M4=new TH.Matrix4(),mf=new TH.Vector3(),mn=new TH.Vector3(),mr=new TH.Vector3();
 let T=0;const _e=EXTRA;EXTRA=function(dt){_e(dt);try{
  const d=Math.hypot(p.x-X,p.z-Z),far=d>230;if(TG.visible===far){TG.visible=!far;SG.visible=!far}if(far)return;T+=dt;const t=time;
- /* columpio */
- const on=sitting&&cur===SW2;SW2.amp+=((on?.55:.06)-SW2.amp)*Math.min(1,dt*(on?.7:1.5));swPose2();
+ /* columpio: quieto; solo se mece suave mientras alguien está sentado */
+ const on=sitting&&cur===SW2;SW2.amp+=((on?SWING_SEATED:SWING_IDLE)-SW2.amp)*Math.min(1,dt*(on?.7:2.2));if(!on&&SW2.amp<.003)SW2.amp=0;swPose2();
  /* viento en el follaje */
  canopy.matrixAutoUpdate=true;canopy.rotation.z=Math.sin(t*.6)*.006;canopy.rotation.x=Math.cos(t*.5)*.005;
  if(d>140)return;
- /* pájaros: posados, despegue, vuelo con curva que esquiva el tronco, aterrizaje */
+ /* pájaros: posados, despegue, vuelo en arco alrededor del tronco, aterrizaje con frenada */
  for(const o of BR){const g=o.b.g,b=o.b;
   if(o.st==='perch'){o.t-=dt;const lk=Math.sin(t*.35+o.ph);b.head.rotation.y=Math.sin(t*1.9+o.ph)*.55*(lk>.2?1:.15);b.head.rotation.x=Math.max(0,Math.sin(t*5+o.ph*2))*.25*(lk>.6?1:0);b.bd.rotation.x=-.1;b.bd.position.y=Math.sin(t*2+o.ph)*.004;foldWings(b,1);g.position.copy(perches[o.pr]);g.rotation.y+=Math.atan2(Math.sin(o.yaw-g.rotation.y),Math.cos(o.yaw-g.rotation.y))*Math.min(1,dt*4);g.rotation.x=0;g.rotation.z=0;
    for(const l of b.legs)l.rotation.x=0;
    if(o.t<=0){let n=o.pr;for(let k=0;k<8&&(n===o.pr||BR.some(q=>q!==o&&(q.pr===n||q.nx===n)));k++)n=Math.floor(Math.random()*perches.length);if(n===o.pr)n=(o.pr+1)%perches.length;o.st='crouch';o.t=0;o.nx=n}}
-  else if(o.st==='crouch'){o.t+=dt;b.bd.position.y=-.03*Math.sin(Math.min(1,o.t/.25)*Math.PI*.5);b.bd.rotation.x=.25*Math.min(1,o.t/.25);if(o.t>.28){o.st='fly';o.t=0;o.from=g.position.clone();o.to=perches[o.nx].clone();const mid=o.from.clone().add(o.to).multiplyScalar(.5);const ox=mid.x-X,oz=mid.z-Z,ol=Math.hypot(ox,oz)||1;const need=6.5;if(ol<need){mid.x=X+ox/ol*need;mid.z=Z+oz/ol*need}mid.y=Math.max(o.from.y,o.to.y)+2.5+Math.random()*3;o.ctl=mid;o.T=1.6+o.from.distanceTo(o.to)*.2;o.lp=g.position.clone()}}
-  else{o.t+=dt;const k=Math.min(1,o.t/o.T),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2,u=1-e;V.set(u*u*o.from.x+2*u*e*o.ctl.x+e*e*o.to.x,u*u*o.from.y+2*u*e*o.ctl.y+e*e*o.to.y,u*u*o.from.z+2*u*e*o.ctl.z+e*e*o.to.z);
+  else if(o.st==='crouch'){o.t+=dt;b.bd.position.y=-.03*Math.sin(Math.min(1,o.t/.25)*Math.PI*.5);b.bd.rotation.x=.25*Math.min(1,o.t/.25);
+   if(o.t>.28){o.st='fly';o.t=0;o.from=g.position.clone();o.to=perches[o.nx].clone();
+    o.a1=Math.atan2(o.from.z-Z,o.from.x-X);const da=Math.atan2(o.to.z-Z,o.to.x-X)-o.a1;o.da=Math.atan2(Math.sin(da),Math.cos(da));
+    o.r1=Math.hypot(o.from.x-X,o.from.z-Z);o.r2=Math.hypot(o.to.x-X,o.to.z-Z);o.arch=1.2+Math.random()*2.4;o.bulge=Math.random()*1.6;
+    const arc=Math.abs(o.da)*(o.r1+o.r2)/2,dd=Math.hypot(arc,o.to.y-o.from.y,o.r2-o.r1);o.T=1.5+dd*.17}}
+  else{o.t+=dt;const k=Math.min(1,o.t/o.T),e=k*k*(3-2*k);flyPos(o,e,V);
    const vx=V.x-g.position.x,vy=V.y-g.position.y,vz=V.z-g.position.z,hl=Math.hypot(vx,vz);g.position.copy(V);
-   if(hl>1e-4){const ty=Math.atan2(vx,vz);const dy=Math.atan2(Math.sin(ty-g.rotation.y),Math.cos(ty-g.rotation.y));g.rotation.y+=dy*Math.min(1,dt*7);g.rotation.z+=((-dy*.9)-g.rotation.z)*Math.min(1,dt*5);g.rotation.x+=((-Math.atan2(vy,hl)*.9)-g.rotation.x)*Math.min(1,dt*6)}
-   b.bd.rotation.x=0;b.bd.position.y=0;const land=k>.88,tk=k<.22;flapWings(b,t*(tk||land?30:20)+o.ph,(tk||land)?.95:.7);if(!tk&&!land&&k>.35&&k<.75&&Math.sin(t*.9+o.ph)>.3){flapWings(b,0,.08)}
+   const land=k>.82,tk=k<.2;
+   if(hl>1e-4){const ty=Math.atan2(vx,vz),dy=Math.atan2(Math.sin(ty-g.rotation.y),Math.cos(ty-g.rotation.y));g.rotation.y+=dy*Math.min(1,dt*(land?3:7));g.rotation.z+=((-dy*.9)-g.rotation.z)*Math.min(1,dt*5);
+    const pit=land?-.55*Math.min(1,(k-.82)/.12):-Math.atan2(vy,hl)*.9;g.rotation.x+=(pit-g.rotation.x)*Math.min(1,dt*6)}
+   b.bd.rotation.x=0;
+   if(land)flapWings(b,t*32+o.ph,1.0);else if(tk)flapWings(b,t*30+o.ph,.95);else if(k>.38&&k<.72&&Math.sin(t*.9+o.ph)>.3)glideWings(b,.1);else flapWings(b,t*21+o.ph,.7);
    for(const l of b.legs)l.rotation.x=land?-.9:.9;
-   if(k>=1){o.st='perch';o.pr=o.nx;o.nx=-1;o.t=7+Math.random()*18;o.yaw=Math.random()*TAU;g.rotation.x=0;g.rotation.z=0}}}
+   if(k>=1){o.st='perch';o.pr=o.nx;o.nx=-1;o.t=7+Math.random()*18;o.yaw=g.rotation.y+(Math.random()-.5)*1.2;g.rotation.x=0;g.rotation.z=0}}}
  for(const o of GL){o.a+=dt*o.sp;const g=o.b.g,cx=X+OX*18,cz=Z+OZ*18,x=cx+Math.cos(o.a)*o.rr,z=cz+Math.sin(o.a)*o.rr,y=GY+o.h+Math.sin(t*.4+o.ph)*2.2;g.position.set(x,y,z);g.rotation.y=Math.atan2(-Math.sin(o.a),Math.cos(o.a));g.rotation.z=-.3;g.rotation.x=-.04;
-  const gl=Math.sin(t*.25+o.ph)>.15;if(gl)flapWings(o.b,0,.12+.05*Math.sin(t*.8));else flapWings(o.b,t*6.5+o.ph,.65);for(const l of o.b.legs)l.rotation.x=1.2}
+  const gl=Math.sin(t*.25+o.ph)>.15;if(gl)glideWings(o.b,.12+.05*Math.sin(t*.8));else flapWings(o.b,t*6.5+o.ph,.65);for(const l of o.b.legs)l.rotation.x=1.2}
  /* ardillas: sobre tronco y ramas, esconderse entre las hojas y volver */
  const Q4=new TH.Quaternion(),P_={p:new TH.Vector3(),n:new TH.Vector3()},P2={p:new TH.Vector3(),n:new TH.Vector3()};
  for(const o of SQ){const q=o.q,g=q.g;o.t-=dt;
@@ -193,7 +219,6 @@ let T=0;const _e=EXTRA;EXTRA=function(dt){_e(dt);try{
  }catch(e){if(!window.__b42e){window.__b42e=1;console.error('[B43]',e)}}};
 /* congelar lo estático */
 TG.updateMatrixWorld(true);SG.updateMatrixWorld(true);TG.traverse(o=>{if(o!==TG&&o!==canopy&&o.parent!==canopy&&!o.isSprite)o.matrixAutoUpdate=false});
-SG.traverse(o=>{if(o!==SG&&o!==pv&&!pv.children.includes(o)){}});
 try{TIPS.push('Al final de la isla hay un mirador con un árbol gigante: manzanas, pájaros, ardillas y un columpio mirando al mar.')}catch(e){}
 window.__mirador={X,Z,GY};console.log('[B43] mirador en',X.toFixed(0),Z.toFixed(0));
 });
