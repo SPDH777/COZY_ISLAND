@@ -1,4 +1,4 @@
-/* ===== B43: mirador del mar con árbol gigante, manzanas, pájaros, ardillas y columpio (v3) ===== */
+/* ===== B43: mirador del mar con árbol gigante, manzanas, pájaros y columpio (v4) ===== */
 (function(){const st=(n,f)=>{try{f()}catch(e){console.error('[B43] '+n,e)}};const TH=THREE,TAU=Math.PI*2;
 st('mirador',()=>{
 const SWING_IDLE=0,SWING_SEATED=.22;/* columpio: quieto solo; suave cuando alguien se sienta (pon SWING_SEATED=0 para que nunca se mueva) */
@@ -137,32 +137,6 @@ for(let i=0;i<7;i++){const P=pal[i%pal.length],b=mkBird(P[0],P[1],P[2],1.45);con
 const GL=[];for(let i=0;i<3;i++){const b=mkBird(0xf8f8f8,0xffffff,0xe4e8ee,2.4,true);GL.push({b,a:i/3*TAU,rr:20+i*7,h:26+i*3,sp:.17+i*.03,ph:i*2})}
 /* trayectoria de vuelo: arco alrededor del árbol (coordenadas polares), nunca atraviesa el tronco */
 const flyPos=(o,e,out)=>{const s=Math.sin(Math.PI*e),ang=o.a1+o.da*e,y=o.from.y+(o.to.y-o.from.y)*e+s*o.arch;let r=o.r1+(o.r2-o.r1)*e+s*o.bulge;const mrad=TR(ang,y-GY)+1.3*Math.min(1,Math.min(e,1-e)*6);if(r<mrad)r=mrad;out.set(X+Math.cos(ang)*r,y,Z+Math.sin(ang)*r);return out};
-/* ---- ardillas: recorren tronco, ramas y copa ---- */
-const mkSq=()=>{const g=new TH.Group();g.rotation.order='YXZ';const fur=MS(0xa8602c,{roughness:.92}),belly=MS(0xecd6ae,{roughness:.92}),dk=MS(0x4a2a14,{roughness:.9}),tipc=MS(0xd9a068,{roughness:.95});
- const S=(geo,m,x,y,z,sx,sy,sz,par)=>{const o=new TH.Mesh(geo,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);(par||g).add(o);return o};const SP=new TH.SphereGeometry(1,12,10);
- const body=new TH.Group();g.add(body);
- S(SP,fur,0,.03,-.07,.12,.115,.17,body);S(SP,fur,0,.05,.07,.095,.095,.15,body);S(SP,belly,0,-.02,.04,.07,.06,.17,body);
- const head=new TH.Group();head.position.set(0,.1,.22);body.add(head);S(SP,fur,0,0,0,.082,.078,.095,head);S(SP,fur,0,-.015,.075,.05,.045,.06,head);S(SP,dk,0,-.01,.13,.014,.012,.012,head);S(SP,belly,0,-.04,.05,.04,.025,.05,head);
- for(const s of[-1,1]){S(SP,new TH.MeshBasicMaterial({color:0x0a0806}),s*.055,.02,.045,.02,.022,.016,head);const ear=new TH.Mesh(new TH.ConeGeometry(.032,.075,6),fur);ear.position.set(s*.055,.085,-.015);ear.rotation.z=-s*.2;head.add(ear);S(SP,tipc,s*.058,.118,-.015,.008,.025,.008,head)}
- const legs=[];for(const [x,z,big] of[[-.07,.15,0],[.07,.15,0],[-.085,-.12,1],[.085,-.12,1]]){const lg=new TH.Group();lg.position.set(x,-.02,z);body.add(lg);S(SP,fur,0,-.035,0,big?.045:.032,big?.065:.05,big?.07:.045,lg);S(SP,dk,0,-.08,.02,big?.04:.03,.018,big?.07:.04,lg);legs.push(lg)}
- const tl=new TH.Group();tl.position.set(0,.03,-.2);body.add(tl);const tails=[];for(let i=0;i<8;i++){const t=i/7,r=.045+.085*Math.sin(Math.min(1,t*1.15)*2.4)*.9+.01,o=S(SP,i<6?fur:tipc,0,.0+.4*t-.0,-.03-.13*Math.sin(t*2.7),r,r*1.1,r*1.35,tl);o.position.y=.05+.42*t;o.position.z=-.04-.16*Math.sin(t*2.6)+.12*t*t;tails.push(o)}
- g.scale.setScalar(1.75);scene.add(g);return{g,body,head,legs,tl}};
-/* movimiento de ardillas en el suelo: rodean piedras y tronco, giran suave, pasan por encima de las raíces */
-const sqY=(x,z)=>Math.max(groundH(x,z),rootTop(x,z));
-const sqFree=(x,z)=>{if(stHit(x,z,.22))return false;const dx=x-X,dz=z-Z;return Math.hypot(dx,dz)>TR(Math.atan2(dz,dx),0)-.05};
-const sqStep=(o,g,tx,tz,sp,dt)=>{const dx=tx-g.position.x,dz=tz-g.position.z,L=Math.hypot(dx,dz);if(L<1e-4)return 0;
- const base=Math.atan2(dz,dx),st=Math.min(sp*dt,L);if(!o.side)o.side=Math.random()<.5?1:-1;let ang=base,moved=false;
- for(let k=0;k<=12&&!moved;k++){for(const sg of(k?[o.side,-o.side]:[1])){const an=base+sg*k*.26,nx=g.position.x+Math.cos(an)*st,nz=g.position.z+Math.sin(an)*st;
-  if(L<.5||sqFree(nx,nz)){if(k)o.side=sg;g.position.x=nx;g.position.z=nz;ang=an;moved=true;break}}}
- const ty=Math.atan2(Math.cos(ang),Math.sin(ang));o.yw=o.yw||0;o.yw+=Math.atan2(Math.sin(ty-o.yw),Math.cos(ty-o.yw))*Math.min(1,dt*10);return L};
-const SQ=[];for(let i=0;i<3;i++){const q=mkSq();SQ.push({q,s:'wait',t:1+i*2.2,th:rnd()*TAU,route:null,k:0,dir:1,sp:2.1+rnd()*.7,ph:rnd()*9,gx:0,gz:0,pause:0,qt:new TH.Quaternion()});q.g.visible=true;
- {const o=SQ[SQ.length-1];o.yw=0;for(let k=0;k<30;k++){o.th=rnd()*TAU;const r=TR(o.th,0)+1.2;q.g.position.set(X+Math.cos(o.th)*r,0,Z+Math.sin(o.th)*r);if(!stHit(q.g.position.x,q.g.position.z,.5))break}q.g.position.y=sqY(q.g.position.x,q.g.position.z)}}
-const mkRoute=(L)=>{const R=[];const trunkTop=L?L.h0:20,a0=L?L.a:rnd()*TAU,hs=L?L.h0:19.5;
- for(let h=0;h<=hs;h+=.4){const ang=a0-(hs-h)*.2,rr=(h<14?TR(ang,h):.85-(h-14)*.08)+.11;R.push({p:new TH.Vector3(Math.cos(ang)*rr,h,Math.sin(ang)*rr),n:new TH.Vector3(Math.cos(ang),0,Math.sin(ang))})}
- if(L){const n=L.pts.length-1;for(let i=1;i<=n;i++){const q=L.pts[i],rad=L.r0+(L.r1-L.r0)*i/n,d=Math.hypot(q.x,q.z);if(d<TR(Math.atan2(q.z,q.x),q.y)+.05)continue;R.push({p:new TH.Vector3(q.x,q.y+rad+.1,q.z),n:new TH.Vector3(0,1,0)})}
-  const e=L.pts[n],pe=L.pts[n-1],dv=new TH.Vector3().subVectors(e,pe).normalize();for(let k=1;k<=4;k++)R.push({p:new TH.Vector3(e.x+dv.x*k*.8,e.y+dv.y*k*.8+.15+k*.1,e.z+dv.z*k*.8),n:new TH.Vector3(0,1,0)})}
- let acc=0;R[0].l=0;for(let i=1;i<R.length;i++){acc+=R[i].p.distanceTo(R[i-1].p);R[i].l=acc}R.len=acc;return R};
-const routeAt=(R,s,out)=>{s=Math.max(0,Math.min(R.len,s));let i=1;while(i<R.length-1&&R[i].l<s)i++;const a=R[i-1],b=R[i],k=(s-a.l)/Math.max(1e-4,b.l-a.l);out.p.lerpVectors(a.p,b.p,k);out.n.lerpVectors(a.n,b.n,k).normalize();return out};
 /* ---- luz: rayos de sol entre las hojas, reflejo del sol/luna en el mar, luciérnagas ---- */
 const gTex=(w,h,fn)=>{const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);return new TH.CanvasTexture(c)};
 const rayTex=gTex(32,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,w,0);gr.addColorStop(0,'rgba(255,240,200,0)');gr.addColorStop(.5,'rgba(255,240,200,1)');gr.addColorStop(1,'rgba(255,240,200,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);g.globalCompositeOperation='destination-in';const v=g.createLinearGradient(0,0,0,h);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(.25,'rgba(0,0,0,1)');v.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=v;g.fillRect(0,0,w,h)});
@@ -213,30 +187,7 @@ let T=0;const _e=EXTRA;EXTRA=function(dt){_e(dt);try{
    if(k>=1){o.st='perch';o.pr=o.nx;o.nx=-1;o.t=7+Math.random()*18;o.yaw=g.rotation.y+(Math.random()-.5)*1.2;g.rotation.x=0;g.rotation.z=0}}}
  for(const o of GL){o.a+=dt*o.sp;const g=o.b.g,cx=X+OX*18,cz=Z+OZ*18,x=cx+Math.cos(o.a)*o.rr,z=cz+Math.sin(o.a)*o.rr,y=GY+o.h+Math.sin(t*.4+o.ph)*2.2;g.position.set(x,y,z);g.rotation.y=Math.atan2(-Math.sin(o.a),Math.cos(o.a));g.rotation.z=-.3;g.rotation.x=-.04;
   const gl=Math.sin(t*.25+o.ph)>.15;if(gl)glideWings(o.b,.12+.05*Math.sin(t*.8));else flapWings(o.b,t*6.5+o.ph,.65);for(const l of o.b.legs)l.rotation.x=1.2}
- /* ardillas: sobre tronco y ramas, esconderse entre las hojas y volver */
- const Q4=new TH.Quaternion(),P_={p:new TH.Vector3(),n:new TH.Vector3()},P2={p:new TH.Vector3(),n:new TH.Vector3()};
- for(const o of SQ){const q=o.q,g=q.g;o.t-=dt;
-  const gait=(sp,mv)=>{const w=t*sp+o.ph;q.legs[0].rotation.x=Math.sin(w)*.7*mv;q.legs[1].rotation.x=Math.sin(w+.5)*.7*mv;q.legs[2].rotation.x=Math.sin(w+Math.PI)*.8*mv;q.legs[3].rotation.x=Math.sin(w+Math.PI+.5)*.8*mv;q.body.rotation.x=Math.sin(w*2)*.04*mv;q.tl.rotation.x=(mv?Math.sin(w)*.07:Math.sin(t*3+o.ph)*.18)-.1};
-  if(o.s==='wait'){g.quaternion.identity();g.position.y=sqY(g.position.x,g.position.z);g.rotation.set(0,o.yw+Math.sin(t*.7+o.ph)*.4,0);gait(8,0);q.head.rotation.y=Math.sin(t*1.3+o.ph)*.5;q.head.rotation.x=Math.sin(t*2.1+o.ph)*.12;
-   if(o.t<=0){const L=Math.random()<.3?null:LIMBS[Math.floor(Math.random()*LIMBS.length)];o.route=mkRoute(L);o.s='approach';o.th=Math.atan2(o.route[0].p.z,o.route[0].p.x)}}
-  else if(o.s==='approach'){const r0=o.route[0].p;g.quaternion.identity();const L=sqStep(o,g,X+r0.x,Z+r0.z,3.2,dt);
-   if(L>.3){g.position.y=sqY(g.position.x,g.position.z)+Math.abs(Math.sin(t*13+o.ph))*.1;g.rotation.set(0,o.yw,0);gait(13,1)}else{o.s='climb';o.k=0;o.dir=1}}
-  else if(o.s==='climb'||o.s==='back'){const fw=o.s==='climb';o.k+=dt*o.sp*(fw?1:1.15);if(o.k>=o.route.len)o.k=o.route.len;
-   routeAt(o.route,o.k,P_);routeAt(o.route,o.k+(fw?.35:-.35),P2);
-   const f=new TH.Vector3().subVectors(P2.p,P_.p);if(!fw)f.multiplyScalar(1);if(f.lengthSq()<1e-6)f.set(0,1,0);f.normalize();const n=P_.n.clone();n.addScaledVector(f,-n.dot(f)).normalize();const rt=new TH.Vector3().crossVectors(n,f).normalize();M4.makeBasis(rt,n,f);Q4.setFromRotationMatrix(M4);g.quaternion.slerp(Q4,Math.min(1,dt*10));
-   g.position.set(X+P_.p.x,GY+P_.p.y,Z+P_.p.z).addScaledVector(n,.0);gait(15,1);q.head.rotation.set(Math.sin(t*3+o.ph)*.06,0,0);
-   if(fw&&o.k>=o.route.len){o.s='hold';o.t=3+Math.random()*5}
-   else if(!fw&&o.k<=.05){o.s='ground';o.t=2.5+Math.random()*3;o.run=0;o.pause=0;for(let k=0;k<10;k++){const a=o.th+(Math.random()-.5)*2.6,dd=4.5+Math.random()*4;o.gx=X+Math.cos(a)*dd;o.gz=Z+Math.sin(a)*dd;if(!stHit(o.gx,o.gz,.6))break}}
-   if(fw&&o.k>2&&o.k<o.route.len-3&&!o.mid&&Math.random()<dt*.15){o.mid=1;o.s='rest';o.t=1.2+Math.random()*2}}
-  else if(o.s==='rest'){gait(8,0);q.head.rotation.y=Math.sin(t*2+o.ph)*.6;if(o.t<=0){o.s='climb';o.mid=0}}
-  else if(o.s==='hold'){gait(8,0);q.head.rotation.y=Math.sin(t*1.6+o.ph)*.7;if(o.t<=0){o.s='back'}}
-  else if(o.s==='ground'){const rr=TR(o.th,0)+.9,tx=o.run===0?o.gx:X+Math.cos(o.th)*rr,tz=o.run===0?o.gz:Z+Math.sin(o.th)*rr;g.quaternion.identity();
-   const L=sqStep(o,g,tx,tz,3,dt);
-   if(L>.3){g.position.y=sqY(g.position.x,g.position.z)+Math.abs(Math.sin(t*13+o.ph))*.1;g.rotation.set(0,o.yw,0);gait(13,1)}
-   else{g.position.y=sqY(g.position.x,g.position.z);g.rotation.set(0,o.yw,0);gait(8,0);
-    if(o.run===0){o.pause+=dt;q.head.rotation.x=.35;if(o.pause>2.2){o.pause=0;o.run=1;q.head.rotation.x=0}}
-    else{o.s='wait';o.t=2+Math.random()*4;o.th=Math.atan2(g.position.z-Z,g.position.x-X)}}}}
-/* rayos y reflejo */
+ /* rayos y reflejo */
  const sy=(typeof sunDir!=='undefined')?sunDir.y:0,ns=(typeof ENV!=='undefined')?ENV.ns:0,rk=Math.max(0,Math.min(1,(sy-.06)*3.5))*(1-ns);
  for(const m of RAYS){const v=rk>.02&&d<120;m.visible=v;if(!v)continue;const dir=V.set(-sunDir.x,-sunDir.y,-sunDir.z).normalize();m.position.set(X+m.userData.o.x,GY+m.userData.o.y,Z+m.userData.o.z).addScaledVector(dir,7.5);m.quaternion.setFromUnitVectors(mn.set(0,1,0),dir);if(m.userData.k)m.rotateY(Math.PI/2);m.material.opacity=rk*(.1+.05*Math.sin(t*.7+m.userData.o.x))}
  const glw=(m,dirv,vis,al)=>{m.visible=vis>.02&&al;if(!m.visible)return;const hx=dirv.x,hz=dirv.z,hl=Math.hypot(hx,hz)||1;m.rotation.y=Math.atan2(hx,hz)+Math.PI;m.position.set(hx/hl*(R+92),-1.15,hz/hl*(R+92));m.material.opacity=vis*.8;m.material.map.offset.y=(t*.03)%1};
@@ -247,7 +198,7 @@ let T=0;const _e=EXTRA;EXTRA=function(dt){_e(dt);try{
  }catch(e){if(!window.__b42e){window.__b42e=1;console.error('[B43]',e)}}};
 /* congelar lo estático */
 TG.updateMatrixWorld(true);SG.updateMatrixWorld(true);TG.traverse(o=>{if(o!==TG&&o!==canopy&&o.parent!==canopy&&!o.isSprite)o.matrixAutoUpdate=false});
-try{TIPS.push('Al final de la isla hay un mirador con un árbol gigante: manzanas, pájaros, ardillas y un columpio mirando al mar.')}catch(e){}
+try{TIPS.push('Al final de la isla hay un mirador con un árbol gigante: manzanas, pájaros y un columpio mirando al mar.')}catch(e){}
 window.__mirador={X,Z,GY};console.log('[B43] mirador en',X.toFixed(0),Z.toFixed(0));
 });
 })();
