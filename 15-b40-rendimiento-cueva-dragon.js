@@ -144,7 +144,12 @@ const em=new TH.Sprite(new TH.SpriteMaterial({map:DOT,color:0xff7a2a,blending:TH
 glow(0xff6a2a,0,2,-RZ*.52,16,.16);
 /* --- colisiones (exactas con lo que se ve) --- */
 const cr=Math.cos(.3),sr=Math.sin(.3),DZ=-RZ*.52;
-const DC=[[0,.8,1.9],[0,-1.8,1.9]].map(([x,z,r])=>[x*cr+z*sr,DZ-x*sr+z*cr,r]);
+/* círculos que cubren TODO el cuerpo (en coordenadas del dragón): tronco, patas traseras, brazos, cuello, cabeza y cola */
+const DD=[[0,-1.1,2.5],[0,0,2.7],[0,1.1,2.5],[-1.9,-1.6,1.4],[1.9,-1.6,1.4],
+ [1.2,3.4,.75],[1.2,4.2,.75],[1.2,5.0,.8],[1.2,5.6,.5],[3.4,3.4,.75],[3.4,4.2,.75],[3.4,5.0,.8],[3.4,5.6,.5],
+ [1.2,3.2,1],[2.2,4.3,.95],[2.8,5.4,.85],[2.9,6.4,.8],[2.8,7.6,1],[2.5,8.56,.9],[2.24,9.41,.6]];
+for(let i=0;i<18;i++){const t=i/17,th=Math.PI*(1.5-.95*t);DD.push([Math.cos(th)*(4.3-t),Math.sin(th)*(4.4-1.2*t),(1.25*(1-t)+.16)*1.1])}
+const DC=DD.map(([x,z,r])=>[x*cr+z*sr,DZ-x*sr+z*cr,r]);
 const inDr=(lx,lz,m)=>{for(const c of DC)if(Math.hypot(lx-c[0],lz-c[1])<c[2]+m)return true;return false};
 const inPR=(lx,lz)=>{for(const c of PR){const dx=lx-c[0],dz=lz-c[1];if(Math.abs(dx)<c[2]&&Math.abs(dz)<c[2]&&dx*dx+dz*dz<c[2]*c[2])return true}return false};
 const gapZ=(lx,lz)=>lz>RZ-5&&lz<RZ+RL&&Math.abs(lx)<3.2;
@@ -169,7 +174,7 @@ const caveBlk=(x,z)=>{const lx=x-C.x,lz=z-C.z;if(Math.abs(lx)>RX*1.3||lz<-RZ*1.3
 const _ab=ablk;ablk=function(x,z){return caveBlk(x,z)||_ab(x,z)};
 /* --- cámara: nunca atraviesa roca, dragón, suelo ni la rampa --- */
 const camBad=(x,y,z,pIn,pGap)=>{const lx=x-C.x,ly=y-C.y,lz=z-C.z;
- if(ly<3&&inDr(lx,lz,0))return true;
+ if(ly<4.4&&inDr(lx,lz,.1))return true;
  const u=lx/RX,v=ly/RY,w=lz/RZ,L=Math.sqrt(u*u+v*v+w*w);if(L>1.8||L<1e-6)return false;
  if(lz>RZ*.7&&Math.abs(lx)<3.6&&ly<5.4&&ly>-.3)return false;
  const S_=L/kf(u/L,v/L,w/L);
