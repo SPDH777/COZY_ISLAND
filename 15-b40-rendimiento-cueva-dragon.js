@@ -70,7 +70,7 @@ G.add(new TH.Mesh(sg,MS(0xffffff,{vertexColors:true,flatShading:true,side:TH.Dou
 {const N=72,pos=[0,.05,0],idx=[];for(let i=0;i<N;i++){const th=i/N*TAU,r=rad(th)*1.01;pos.push(Math.cos(th)*RX*r,.05,Math.sin(th)*RZ*r)}for(let i=0;i<N;i++)idx.push(0,1+i,1+(i+1)%N);
  const g=new TH.BufferGeometry();g.setAttribute('position',new TH.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();
  const m=new TH.Mesh(g,MS(0x4a403a,{side:TH.DoubleSide}));G.add(m)}
-const rb=(r,x,y,z,s,col)=>{PR.push([x,z,r*.85]);const m=new TH.Mesh(new TH.DodecahedronGeometry(r,0),MS(col||0x5d554d,{flatShading:true}));m.position.set(x,y,z);m.scale.set(1,s||.8,1);m.rotation.set(x*.7,z*.3,y);G.add(m)};
+const rb=(r,x,y,z,s,col)=>{if(y<2.2)PR.push([x,z,r*.85]);/* las rocas altas del arco no estorban al caminar */const m=new TH.Mesh(new TH.DodecahedronGeometry(r,0),MS(col||0x5d554d,{flatShading:true}));m.position.set(x,y,z);m.scale.set(1,s||.8,1);m.rotation.set(x*.7,z*.3,y);G.add(m)};
 /* marco de roca del arco */
 for(let i=0;i<=12;i++){const ph=i/12*Math.PI;for(const sd of[-1,1]){if((i===0||i===12)&&sd===1)continue;const ax=sd*4.35*Math.cos(ph),ay=.6+4.8*Math.sin(ph),k=Math.max(.05,1-(ax/RX)**2-(ay/RY)**2),z=RZ*Math.sqrt(k)*1.0;rb(1.05+.25*Math.sin(i*2.3),ax*1.04,ay,z-.2,.85,i%2?0x625a52:0x554e47)}}
 /* anillo de rocas en la base exterior para tapar la unión con el pasto */
