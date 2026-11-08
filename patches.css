@@ -1,0 +1,28 @@
+/* ===== v29: arranque (B30: física mejorada) ===== */
+#boot{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden;
+background:radial-gradient(ellipse at 50% 36%,#4a3470 0,#241f4a 42%,#0b1424 100%);transition:opacity 1.5s ease,visibility 0s linear 1.5s;font-family:'Nunito','Segoe UI',system-ui,sans-serif}
+#boot.out{opacity:0;visibility:hidden;pointer-events:none}
+#boot:before{content:"";position:absolute;left:50%;top:40%;width:80vmin;height:80vmin;margin:-40vmin 0 0 -40vmin;border-radius:50%;background:radial-gradient(circle,#ffb3d155,#ffb3d100 65%);animation:bglow 4s ease-in-out infinite}
+@keyframes bglow{50%{transform:scale(1.14);opacity:.7}}
+#boot .bi{position:relative;display:flex;flex-direction:column;align-items:center;padding:0 20px;animation:bin 1.3s cubic-bezier(.2,.7,.2,1) .35s both}
+@keyframes bin{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+#boot .be{font:600 13px 'Nunito',system-ui,sans-serif;letter-spacing:.7em;text-indent:.7em;text-transform:uppercase;opacity:.85}
+#boot .bt{margin:10px 0 0;font:600 clamp(36px,9vw,80px)/1 'Cinzel','Trajan Pro',Georgia,serif;letter-spacing:.14em;text-indent:.14em;background:linear-gradient(#fff,#f3d4a0);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 18px #000b)}
+#boot .bn{width:120px;height:1px;background:linear-gradient(90deg,#0000,#fffc,#0000);margin:22px 0 28px}
+#boot .bb{width:min(260px,62vw);height:3px;border-radius:2px;background:#ffffff26;overflow:hidden}
+#boot .bb i{display:block;height:100%;width:40%;border-radius:2px;background:linear-gradient(90deg,#0000,#f0b45a,#0000);animation:bbar 1.7s ease-in-out infinite}
+@keyframes bbar{from{transform:translateX(-110%)}to{transform:translateX(260%)}}
+#boot .bs{margin-top:16px;font-size:12px;letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;opacity:.65;animation:bpulse 2.4s ease-in-out infinite}
+@keyframes bpulse{50%{opacity:.3}}
+#boot .pt{position:absolute;top:-5%;width:11px;height:8px;border-radius:70% 30% 70% 30%;background:#ffc6dc;opacity:.8;animation:pfall 10s linear infinite;will-change:transform}
+@keyframes pfall{from{transform:translate3d(0,0,0) rotate(0)}to{transform:translate3d(70px,112vh,0) rotate(600deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+body[data-ph=title] #t1>*{animation:rise 1.3s cubic-bezier(.2,.7,.2,1) both}
+body[data-ph=title] #t1>.eb{animation-delay:.3s}
+body[data-ph=title] #t1>.lg{animation-delay:.5s}
+body[data-ph=title] #t1>.ln{animation-delay:.75s}
+body[data-ph=title] #t1>.sb{animation-delay:.9s}
+body[data-ph=title] #t1>#play{animation-delay:1.15s}
+body[data-ph=title] #t1>#cr{animation-delay:1.3s}
+body[data-ph=title] #t1>#tc{animation-delay:1.4s}
+body[data-ph=title] #t1>.ft{animation-delay:1.6s}

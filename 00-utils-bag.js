@@ -1,0 +1,1 @@
+window.__bag37=(function(){const W=new WeakMap();return function(o,a){let b=W.get(o);if(!b||b.s!==a){b={s:a,q:[],l:-1};W.set(o,b)}if(!b.q.length){b.q=a.map((_,i)=>i);for(let i=b.q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b.q[i],b.q[j]]=[b.q[j],b.q[i]]}if(b.q.length>1&&b.q[b.q.length-1]===b.l)b.q.unshift(b.q.pop())}const i=b.q.pop();b.l=i;return a[i]}})();

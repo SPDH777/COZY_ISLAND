@@ -1,0 +1,109 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Anime Cozy Island</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Nunito:wght@600;700&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Nunito:wght@600;700&display=swap"></noscript>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="patches.css"></head><body data-ph="boot">
+<div id="boot"><i class="pt" style="left:6%;animation-duration:9s;animation-delay:-1s"></i><i class="pt" style="left:15%;animation-duration:12s;animation-delay:-6s"></i><i class="pt" style="left:24%;animation-duration:10s;animation-delay:-3s"></i><i class="pt" style="left:33%;animation-duration:13s;animation-delay:-9s"></i><i class="pt" style="left:42%;animation-duration:9s;animation-delay:-5s"></i><i class="pt" style="left:52%;animation-duration:11s;animation-delay:-2s"></i><i class="pt" style="left:61%;animation-duration:12s;animation-delay:-8s"></i><i class="pt" style="left:70%;animation-duration:10s;animation-delay:-4s"></i><i class="pt" style="left:79%;animation-duration:13s;animation-delay:-7s"></i><i class="pt" style="left:88%;animation-duration:9s;animation-delay:-0s"></i><i class="pt" style="left:95%;animation-duration:11s;animation-delay:-5s"></i><i class="pt" style="left:47%;animation-duration:14s;animation-delay:-11s"></i><div class="bi"><div class="be">Anime</div><h1 class="bt">Cozy Island</h1><div class="bn"></div><div class="bb"><i></i></div><div class="bs">Preparando la isla</div></div></div>
+<div id="vg"></div>
+<div id="hud"><b>Cozy Island</b><div id="help"><div><span class="k">W A S D</span>Mover</div><div><span class="k">Shift</span>Correr</div><div><span class="k">E</span>Interactuar</div><div><span class="k">Arrastrar</span>Cámara</div></div></div>
+<button class="btn" id="mute" aria-label="Sonido"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="w" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button><button class="btn" id="mus" aria-label="Música">♪</button><button class="btn" id="gfx">Gráficos</button><button class="btn" id="tod">Día</button><button class="btn" id="sit"><span class="k">E</span><span id="sl"></span></button><button class="btn" id="run">Correr</button>
+<div id="joy"><div id="knob"></div></div>
+<div id="t1" class="scr"><div class="eb">Anime</div><h1 class="lg">Cozy Island</h1><div class="ln"></div><div class="sb">Una isla tranquila para explorar</div><button id="play" class="mbtn">Jugar</button><button id="cr" class="mbtn g" style="margin-top:16px">Créditos</button><button id="tc" class="mbtn g" style="margin-top:10px">Términos y condiciones</button><div class="ft">Samuel PDH</div></div>
+<div id="t2" class="scr"><h2>Elige tu personaje</h2><div><div id="cards"><button class="card on" data-g="m">Leo<small>Camiseta turquesa y pantalón</small></button><button class="card" data-g="f">Emily<small>Blusa blanca y falda azul</small></button></div><div id="tods"><button class="tod on" data-t="day">Día</button><button class="tod" data-t="dusk">Atardecer</button><button class="tod" data-t="night">Noche</button><button class="tod" data-t="auto">Automático</button></div><div class="row"><button id="back" class="mbtn g">Volver</button><button id="go">Comenzar</button></div></div></div>
+<div id="ld" class="scr"><div class="eb">Anime</div><h1 class="lg">Cozy Island</h1><div class="bar"><i id="pb"></i></div><div id="tip"></div></div>
+<div id="bars"><i></i><i></i></div>
+<div id="toast"></div>
+<div id="dy" class="md"><div class="pn paper">
+ <div class="ph"><b>Mi diario</b><span id="dsv"></span><button class="x">✕</button></div>
+ <div id="dwarn" class="warn">⚠ Este navegador no deja guardar aquí (el juego está abierto como archivo). Usa «Copia de seguridad» después de escribir, o publica el juego en un enlace (por ejemplo GitHub Pages) para que se guarde solo.</div>
+ <div id="dv1" class="col">
+  <div class="rowb"><button id="dnew" class="bt">✎ Escribir hoy</button><button id="dnew2" class="bt g">＋ Otra entrada</button></div>
+  <div id="drows" class="sc"></div>
+  <p class="em" style="padding:0">Este es tu espacio seguro. Todo se guarda solo, en tu celular.</p>
+  <div class="rowb"><button id="dbk" class="bt g">Copia de seguridad</button><button id="dtx" class="bt g">Guardar como texto</button><label class="bt g" for="dimp">Importar</label></div>
+  <input type="file" id="dimp" accept=".json,application/json" hidden>
+ </div>
+ <div id="dv2" class="col" style="display:none">
+  <div class="rowb" style="align-items:center"><button id="dback" class="bt g" style="flex:0 0 auto;padding:8px 14px">← Entradas</button><span id="ddt" style="font-size:12px;opacity:.75;text-align:right;text-transform:capitalize"></span></div>
+  <input type="text" id="dti" placeholder="Título (opcional)" maxlength="80" autocomplete="off">
+  <textarea id="dta" placeholder="Escribe lo que sientes, lo que pasó hoy, lo que piensas… nadie más lo lee." spellcheck="false"></textarea>
+  <button id="ddel" class="bt g" style="align-self:flex-start;opacity:.8">Borrar esta entrada</button>
+ </div>
+</div></div>
+<div id="mu" class="md"><div class="pn">
+ <div class="ph"><b>Música</b><button class="x">✕</button></div>
+ <label for="mfile" class="bt">＋ Elegir canciones de tu celular</label><input type="file" id="mfile" accept="audio/*" multiple hidden>
+ <div id="mlist" class="sc" style="max-height:34vh"></div>
+ <div class="ctl"><button id="mprev">⏮</button><button id="mpp">▶</button><button id="mnext">⏭</button></div>
+ <label class="sl">Volumen de tu música<input type="range" id="mvol" min="0" max="100" value="70"></label>
+ <label class="sl">Sonidos de la isla<input type="range" id="mamb" min="0" max="100" value="60"></label>
+ <button id="mclr" class="bt g">Quitar todas las canciones</button>
+</div></div>
+<div id="cd" class="md"><div class="pn">
+ <div class="ph"><b>Créditos</b><button class="x">✕</button></div>
+ <div class="sc cp">
+  <h3>Sobre el juego</h3>
+  <p><b>Cozy Island</b> es una isla tranquila hecha para relajarte. No hay puntos, ni tiempo, ni presión: solo pasear, respirar y disfrutar.</p>
+  <p>Camina entre flores, acaricia a los zorritos, conejitos y perritos, toma un café caliente, duerme en una cabaña, columpiate en el árbol rosado y mira cómo el día se convierte en atardecer y en una noche de estrellas. Pon tu propia música mientras exploras.</p>
+  <p>Y cuando necesites un momento de calma, ve a la cabaña de madera y escribe en tu diario privado. Todo se guarda solo en tu dispositivo.</p>
+  <h3>Créditos</h3>
+  <p>Diseño del juego, dirección de arte y programación — <b>Samuel PDH</b></p>
+  <p>Hecho con three.js · Tipografías: Cinzel y Nunito (Google Fonts)</p>
+  <p>Los sonidos ambientales se generan en vivo en tu navegador.</p>
+  <p>Contacto: <b><a href="mailto:Desarrolloswebspdh@gmail.com" style="color:inherit">Desarrolloswebspdh@gmail.com</a></b></p>
+  <p style="font-size:.88em;opacity:.85">© S_PDH. Todos los derechos reservados. Cozy Island, su diseño, personajes, arte, código y marca son obra original de S_PDH. Queda prohibido clonar, copiar o redistribuir el juego, o presentarlo como propio. Si te inspiras en este proyecto o utilizas alguna de sus partes, debes dar crédito visible a S_PDH como fuente original.</p>
+  <h3>Gracias</h3>
+  <p>Gracias por jugar. Respira hondo y disfruta la isla. ♥</p>
+ </div>
+</div></div>
+<div id="tm" class="md"><div class="pn">
+ <div class="ph"><b>Términos y condiciones</b><button class="x">✕</button></div>
+ <div class="sc cp">
+  <h3>1. Aceptación</h3><p>Al jugar Cozy Island aceptas estos términos. Si no estás de acuerdo, por favor no uses el juego.</p>
+  <h3>2. Uso del juego</h3><p>Cozy Island es gratuito y es para uso personal y de entretenimiento. No puedes vender, copiar, redistribuir ni modificar el juego para publicarlo como tuyo sin permiso de su creador.</p>
+  <h3>3. Propiedad intelectual y atribución</h3><p>El diseño, los personajes, el arte, el código, el nombre y la marca de Cozy Island pertenecen a <b>Samuel PDH (S_PDH)</b> y están protegidos por derechos de autor. © S_PDH. Todos los derechos reservados. No está permitido clonar, copiar, adaptar ni redistribuir el juego, total o parcialmente, ni presentarlo como obra propia o de terceros. Si tomas inspiración de este proyecto o reutilizas cualquiera de sus elementos con autorización, debes otorgar crédito visible y expreso a S_PDH como autor original. Para solicitar permiso, escribe a Desarrolloswebspdh@gmail.com. El juego usa three.js (licencia MIT) y fuentes de Google Fonts (licencia SIL OFL), que pertenecen a sus respectivos autores.</p>
+  <h3>4. Privacidad y datos</h3><p>El juego no tiene cuentas, no recopila datos personales y no envía tu información a ningún servidor. Tu diario y tus ajustes se guardan solo en tu propio dispositivo (almacenamiento local del navegador). Si borras los datos del navegador o cambias de dispositivo, podrías perderlos: usa «Copia de seguridad» para guardarlos. Para cargar, tu navegador puede conectarse a servicios externos (cdnjs y Google Fonts), que pueden registrar tu dirección IP según sus propias políticas.</p>
+  <h3>5. Tu música</h3><p>Las canciones que eliges se reproducen solo en tu dispositivo y no se suben a ningún lado. Eres responsable de tener derecho a usar esa música.</p>
+  <h3>6. Bienestar</h3><p>Es un juego para relajarse; no es un tratamiento médico ni psicológico y no sustituye la ayuda profesional. Si te sientes mal o en crisis, habla con alguien de confianza o con un profesional o línea de ayuda de tu zona.</p>
+  <h3>7. Sin garantías</h3><p>El juego se ofrece «tal cual», sin garantías de ningún tipo. Puede tener errores o dejar de funcionar. El creador no se hace responsable de pérdidas de datos, fallos del dispositivo ni daños derivados del uso del juego, en la medida permitida por la ley.</p>
+  <h3>8. Menores de edad</h3><p>Si eres menor de edad, usa el juego con permiso de tu madre, padre o tutor.</p>
+  <h3>9. Cambios</h3><p>Estos términos pueden actualizarse en futuras versiones del juego. Seguir jugando significa que aceptas la versión vigente.</p>
+  <h3>10. Contacto</h3><p>Para dudas, permisos o solicitudes, escribe a Samuel PDH (S_PDH), creador del juego, a <a href="mailto:Desarrolloswebspdh@gmail.com" style="color:inherit">Desarrolloswebspdh@gmail.com</a>.</p>
+ </div>
+ <button id="tok" class="bt">Acepto</button>
+</div></div>
+<div id="gq" class="md"><div class="pn">
+ <div class="ph"><b>Gráficos</b><button class="x">✕</button></div>
+ <p class="em" style="padding:0 0 4px">Elige cómo se ve la isla. Si tu celular va lento o se calienta, usa Suave.</p>
+ <button class="bt g gqb" data-q="suave">Suave · más fluido, menos batería</button>
+ <button class="bt g gqb" data-q="medio">Medio · equilibrado</button>
+ <button class="bt g gqb" data-q="maximo">Máximo · más vegetación, sombras y detalle</button>
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="00-utils-bag.js"></script>
+<script src="01-core.js"></script>
+<!-- ======================================================= -->
+<!-- PARCHE 14 (UNIFICADO = 12 + 13)                          -->
+<!-- Menú único, cámara libre, salto, sentarse, pasto anime,  -->
+<!-- animales, pesca, foto, cabañas, sakura, bici, eventos    -->
+<!-- QUITA los parches 12 y 13. Pegar entre el último         -->
+<!-- </script> y </body></html>                               -->
+<!-- ======================================================= -->
+<script src="02-patch14-menu-camara-eventos.js"></script>
+
+<script src="03-patch17-cine-animales-cascada.js"></script>
+
+<script src="04-v27-fisica.js"></script>
+
+<script src="05-b30-fisica-pies-camara.js"></script>
+<script src="06-b31-cascada-cueva-elfo.js"></script>
+<script src="07-b32-graficos-habitantes.js"></script>
+<script src="08-b33-pies-correr.js"></script>
+<script src="09-v29-intro-calentamiento.js"></script>
+<script src="10-b35-escalera-angel-ogros.js"></script>
+<script src="11-b36-animales-lluvia.js"></script>
+<script src="12-b37-altura-ojos-inicio.js"></script>
+<script src="13-b38-dialogos.js"></script>
+<script src="14-b39-textos-nado.js"></script>
+<script src="15-b40-rendimiento-cueva-dragon.js"></script>
+<script src="16-b43-mirador-columpio.js"></script>
+</body></html>
