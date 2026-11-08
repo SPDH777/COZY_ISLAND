@@ -1,27 +1,33 @@
-/* ===== B40: rendimiento sin bajar calidad + cueva grande con dragón dormido ===== */
+/* ===== B40: rendimiento sin bajar calidad + cueva grande con dragón dormido (v3 corregida) ===== */
 (function(){const st=(n,f)=>{try{f()}catch(e){console.error('[B40] '+n,e)}};const TH=THREE;
 /* --- rendimiento: sombras a medio ritmo (solo si la calidad no está ya limitada), habitantes lejanos ocultos --- */
 st('perf',()=>{let n=0;const NP=window.__BL.VIL.concat(ELV);const _e=EXTRA;
  EXTRA=function(dt){_e(dt);try{const sm=ren.shadowMap;if(sm.autoUpdate){sm.autoUpdate=false;sm.needsUpdate=(n++&1)===0}
   for(const o of NP){const g=o.g;if(!g)continue;const far=Math.hypot(p.x-o.x,p.z-o.z)>130;if(far&&g.visible){g.visible=false;o.__cf=1}else if(!far&&o.__cf){g.visible=true;o.__cf=0}}}catch(e){}}});
-/* --- cueva v2: sólida, sin paredes invisibles, dragón con ojos/rugido/fuego, mapas secretos --- */
+/* --- cueva v3: sólida, sin huecos, colisión con piedras/cristales/estalagmitas/árboles, dragón con ojos/rugido/fuego, mapas secretos --- */
 st('cueva',()=>{
 const RX=15,RZ=27,RY=10,SK=7,TAU=Math.PI*2,KN=.07;let B=null;
 const nz=(x,y,z)=>Math.sin(x*4.1+y*2.3)*Math.cos(z*3.7-x*1.9)*.5+Math.sin(y*7.3+z*5.1)*.25;
+/* elegir el sitio: muestreo denso del terreno para que el suelo de la cueva nunca quede por debajo de una loma */
 for(let r=45;r<=160;r+=5)for(let a=0;a<TAU;a+=.2){const x=Math.cos(a)*r,z=Math.sin(a)*r;if(Math.hypot(x,z)>R-35)continue;
- let mn=1e9,mx=-1e9;for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){const h=groundH(x+i*RX*.5,z+j*RZ*.5);mn=Math.min(mn,h);mx=Math.max(mx,h)}
+ let mn=1e9,mx=-1e9;for(let i=-4;i<=4;i++)for(let j=-4;j<=4;j++){const h=groundH(x+i*RX*.25,z+j*RZ*.25);mn=Math.min(mn,h);mx=Math.max(mx,h)}
  if(mn<.3||hseBlk(x,z)||Math.hypot(x-52,z-42)<45||Math.abs(x+25)<RX+12)continue;
  let bad=0;for(const t of trees)if(((t.x-x)/(RX+8))**2+((t.z-z)/(RZ+8))**2<1)bad++;
  for(const q of SOL)if(((q[0]-x)/(RX+4))**2+((q[1]-z)/(RZ+4))**2<1)bad+=.3;
  const sc=(mx-mn)+bad*6;if(!B||sc<B.sc)B={x,z,sc,mx}}
 if(!B)return;
-const C={x:B.x,z:B.z,y:B.mx+.15},ez=groundH(C.x,C.z+RZ+9),dh=ez-C.y;
+const C={x:B.x,z:B.z,y:B.mx+.3},ez=groundH(C.x,C.z+RZ+9),dh=ez-C.y;
 const fe=(x,z,m)=>((x-C.x)/(RX+m))**2+((z-C.z)/(RZ+m))**2;
-/* limpiar lo que estorbe dentro de la huella: árboles, flores, rocas sueltas */
-for(let i=trees.length-1;i>0;i--)if(fe(trees[i].x,trees[i].z,7)<1)trees.splice(i,1);
-for(let i=SOL.length-1;i>=0;i--){const q=SOL[i];if(q[3]!==1&&fe(q[0],q[1],4)<1)SOL.splice(i,1)}
+/* PR: obstáculos sólidos locales a la cueva [lx,lz,radio] */
+const PR=[];
+/* ocultar lo que estorbe dentro de la huella (sin tocar las listas de colisión de fuera) y recordar qué quedó visible dentro */
+const hid=[];
 try{const bx=new TH.Box3(),sz=new TH.Vector3();scene.children.slice().forEach(o=>{if(o.isLight||o.isCamera||o.isSprite||o.isLine||o.isPoints)return;if(o.position.lengthSq()<4||o.position.y>30)return;
- if(fe(o.position.x,o.position.z,6)>=1)return;bx.setFromObject(o);bx.getSize(sz);if(sz.x>30||sz.z>30)return;o.visible=false})}catch(e){}
+ if(fe(o.position.x,o.position.z,3)>=1)return;bx.setFromObject(o);bx.getSize(sz);if(sz.x>30||sz.z>30)return;o.visible=false;hid.push([o.position.x,o.position.z])})}catch(e){}
+try{const inner=[];
+ for(const t of trees)if(fe(t.x,t.z,1.5)<1)inner.push([t.x-C.x,t.z-C.z,Math.min(2,Math.max(.7,+t.r||+t.rad||1))]);
+ for(const q of SOL)if(fe(q[0],q[1],1.5)<1)inner.push([q[0]-C.x,q[1]-C.z,Math.min(2.5,Math.max(.7,+q[2]||1))]);
+ for(const c of inner)if(!hid.some(h=>Math.hypot(h[0]-C.x-c[0],h[1]-C.z-c[1])<2.5))PR.push(c)}catch(e){}
 const G=new TH.Group();G.position.set(C.x,C.y,C.z);scene.add(G);
 const MS=(c,o)=>new TH.MeshStandardMaterial(Object.assign({color:c,roughness:.95},o));
 const kf=(ux,uy,uz)=>1+KN*nz(ux,uy,uz);
@@ -33,16 +39,18 @@ const ico=new TH.IcosahedronGeometry(1,4),ps=ico.attributes.position,V=[];
 for(let i=0;i<ps.count;i++){const x=ps.getX(i),y=ps.getY(i),z=ps.getZ(i),k=kf(x,y,z);V.push(x*k*RX,Math.max(y*k*RY,-SK),z*k*RZ)}
 const arch=cx=>.6+4.6*Math.sqrt(Math.max(0,1-(cx/4.2)**2));
 const K=[],CL=[];for(let i=0;i<V.length;i+=9){const cx=(V[i]+V[i+3]+V[i+6])/3,cy=(V[i+1]+V[i+4]+V[i+7])/3,cz=(V[i+2]+V[i+5]+V[i+8])/3;
- if(cz>RZ*.5&&Math.abs(cx)<4.2&&cy<arch(cx)&&cy>-1.5)continue;
+ if(cz>RZ*.5&&Math.abs(cx)<4.2&&cy<arch(cx)&&cy>-.45)continue;
  const sh=.62+.3*nz(cx*.35,cy*.35,cz*.35)+.12*Math.sin(cx*1.7+cz*1.3);
  for(let j=0;j<9;j++)K.push(V[i+j]);for(let j=0;j<3;j++)CL.push(.46*sh,.42*sh,.38*sh)}
 const sg=new TH.BufferGeometry();sg.setAttribute('position',new TH.Float32BufferAttribute(K,3));sg.setAttribute('color',new TH.Float32BufferAttribute(CL,3));sg.computeVertexNormals();
 G.add(new TH.Mesh(sg,MS(0xffffff,{vertexColors:true,flatShading:true,side:TH.DoubleSide,emissive:0x1a130e})));
-/* suelo que sigue exactamente el borde de la roca */
-{const N=72,pos=[0,.05,0],idx=[];for(let i=0;i<N;i++){const th=i/N*TAU,r=rad(th)*.995;pos.push(Math.cos(th)*RX*r,.05,Math.sin(th)*RZ*r)}for(let i=0;i<N;i++)idx.push(0,1+i,1+(i+1)%N);
+/* suelo que sigue exactamente el borde de la roca (un poco más ancho para que no quede rendija con la pared) */
+{const N=72,pos=[0,.05,0],idx=[];for(let i=0;i<N;i++){const th=i/N*TAU,r=rad(th)*1.01;pos.push(Math.cos(th)*RX*r,.05,Math.sin(th)*RZ*r)}for(let i=0;i<N;i++)idx.push(0,1+i,1+(i+1)%N);
  const g=new TH.BufferGeometry();g.setAttribute('position',new TH.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();
  const m=new TH.Mesh(g,MS(0x4a403a,{side:TH.DoubleSide}));G.add(m)}
-const rb=(r,x,y,z,s,col)=>{const m=new TH.Mesh(new TH.DodecahedronGeometry(r,0),MS(col||0x5d554d,{flatShading:true}));m.position.set(x,y,z);m.scale.set(1,s||.8,1);m.rotation.set(x*.7,z*.3,y);G.add(m)};
+/* umbral bajo el arco: tapa el hueco por debajo del suelo en la entrada (por ahí se veía el mapa) */
+{const th=new TH.Mesh(new TH.BoxGeometry(9,4.5,3.4),MS(0x4a403a,{flatShading:true}));th.position.set(0,.04-2.25,RZ-.6);G.add(th)}
+const rb=(r,x,y,z,s,col)=>{PR.push([x,z,r*.85]);const m=new TH.Mesh(new TH.DodecahedronGeometry(r,0),MS(col||0x5d554d,{flatShading:true}));m.position.set(x,y,z);m.scale.set(1,s||.8,1);m.rotation.set(x*.7,z*.3,y);G.add(m)};
 /* marco de roca del arco */
 for(let i=0;i<=12;i++){const ph=i/12*Math.PI;for(const sd of[-1,1]){if((i===0||i===12)&&sd===1)continue;const ax=sd*4.35*Math.cos(ph),ay=.6+4.8*Math.sin(ph),k=Math.max(.05,1-(ax/RX)**2-(ay/RY)**2),z=RZ*Math.sqrt(k)*1.0;rb(1.05+.25*Math.sin(i*2.3),ax*1.04,ay,z-.2,.85,i%2?0x625a52:0x554e47)}}
 /* anillo de rocas en la base exterior para tapar la unión con el pasto */
@@ -50,16 +58,16 @@ for(let i=0;i<30;i++){const th=i/30*TAU+.05,lx=Math.cos(th)*RX*rad(th)*1.03,lz=M
  const wx=C.x+lx,wz=C.z+lz,gy=groundH(wx,wz)-C.y,s=1.2+((i*37)%10)/10*1.1;rb(s,lx,gy+s*.2,lz,.6,i%3?0x5d554d:0x6a6159)}
 /* rampa de entrada */
 const L=Math.hypot(11,dh),rp=new TH.Mesh(new TH.BoxGeometry(7.4,3,L),MS(0x57504a,{flatShading:true}));rp.position.set(0,dh/2-1.5,RZ+3.5);rp.rotation.x=-Math.atan2(dh,11);G.add(rp);
-/* estalactitas y estalagmitas */
+/* estalactitas y estalagmitas (las estalagmitas son sólidas) */
 const rnd=(()=>{let s=7;return()=>(s=(s*16807)%2147483647)/2147483647})();
 const mk=(up,N,col)=>{const g=new TH.ConeGeometry(1,1,6,1);if(!up)g.rotateX(Math.PI);g.translate(0,up?.5:-.5,0);const im=new TH.InstancedMesh(g,MS(col,{flatShading:true}),N),m=new TH.Matrix4(),q=new TH.Quaternion(),P=new TH.Vector3(),Sc=new TH.Vector3();let i=0;
  while(i<N){const lx=(rnd()*2-1)*RX*.8,lz=(rnd()*2-1)*RZ*.8,e=(lx/RX)**2+(lz/RZ)**2;if(e>.6||(lz>RZ*.45&&Math.abs(lx)<6)||Math.hypot(lx,lz+RZ*.52)<10)continue;
-  const w=.3+rnd()*.5,h=1+rnd()*3.2;P.set(lx,up?.0:ceilY(lx,lz)+.15,lz);Sc.set(w,up?h*.6:h,w);m.compose(P,q,Sc);im.setMatrixAt(i++,m)}
+  const w=.3+rnd()*.5,h=1+rnd()*3.2;if(up)PR.push([lx,lz,w+.25]);P.set(lx,up?.0:ceilY(lx,lz)+.15,lz);Sc.set(w,up?h*.6:h,w);m.compose(P,q,Sc);im.setMatrixAt(i++,m)}
  im.matrixAutoUpdate=false;im.updateMatrix();G.add(im)};
 mk(false,40,0x70675d);mk(true,30,0x645c53);
-/* cristales (todos dentro de la cueva) */
+/* cristales (todos dentro de la cueva, sólidos) */
 const glow=(c,x,y,z,s,o)=>{const sp=new TH.Sprite(new TH.SpriteMaterial({map:DOT,color:c,blending:TH.AdditiveBlending,transparent:true,depthWrite:false,opacity:o}));sp.scale.set(s,s,1);sp.position.set(x,y,z);G.add(sp);return sp};
-[[-11,-RZ*.7,0x6af0ff],[11.5,-RZ*.62,0xc08aff],[-9,-RZ*.3,0xc08aff],[10,-RZ*.1,0x6af0ff],[-8.5,RZ*.25,0x6af0ff],[0,-RZ*.9,0xff8a4a]].forEach(([x0,z0,c])=>{const x=x0*.72,z=z0*.72;
+[[-11,-RZ*.7,0x6af0ff],[11.5,-RZ*.62,0xc08aff],[-9,-RZ*.3,0xc08aff],[10,-RZ*.1,0x6af0ff],[-8.5,RZ*.25,0x6af0ff],[0,-RZ*.9,0xff8a4a]].forEach(([x0,z0,c])=>{const x=x0*.72,z=z0*.72;PR.push([x,z,1.5]);
  for(let k=0;k<4;k++){const h=1.2+rnd()*2.2,m=new TH.Mesh(new TH.ConeGeometry(.28+rnd()*.2,h,5),new TH.MeshBasicMaterial({color:c}));m.position.set(x+(rnd()-.5)*1.6,h/2,z+(rnd()-.5)*1.6);m.rotation.set((rnd()-.5)*.5,0,(rnd()-.5)*.5);G.add(m)}
  glow(c,x,1.6,z,6,.5)});
 /* --- DRAGÓN --- */
@@ -116,12 +124,14 @@ glow(0xff6a2a,0,2,-RZ*.52,16,.16);
 const cr=Math.cos(.3),sr=Math.sin(.3),DZ=-RZ*.52;
 const DC=[[0,-.5,4.4],[2.3,4.4,2.1],[2.8,6.6,2],[2.4,8.7,1.5],[-.6,-4.4,1.7],[-2.8,-3.6,1.7],[-3.9,-.6,1.6],[-3.4,2.0,1.5]].map(([x,z,r])=>[x*cr+z*sr,DZ-x*sr+z*cr,r]);
 const inDr=(lx,lz,m)=>{for(const c of DC)if(Math.hypot(lx-c[0],lz-c[1])<c[2]+m)return true;return false};
+const inPR=(lx,lz)=>{for(const c of PR){const dx=lx-c[0],dz=lz-c[1];if(Math.abs(dx)<c[2]&&Math.abs(dz)<c[2]&&dx*dx+dz*dz<c[2]*c[2])return true}return false};
 const gapZ=(lx,lz)=>lz>RZ-2&&lz<RZ+9.5&&Math.abs(lx)<3.4;
 /* rr<1: dentro; banda de pared = rr dentro de kf±.035 (ancho real de la roca) */
 const rr=(lx,lz)=>{const u=lx/RX,w=lz/RZ,r=Math.hypot(u,w)||1e-6;return[r,kf(u/r,0,w/r)]};
 const _ok=ok;ok=function(x,z,oy){const lx=x-C.x,lz=z-C.z;
- if(Math.abs(lx)<RX*1.2&&lz>-RZ*1.2&&lz<RZ+12){
+ if(Math.abs(lx)<RX*1.35&&lz>-RZ*1.3&&lz<RZ+12){
   if(gapZ(lx,lz))return true;
+  if(inPR(lx,lz))return false;
   const[r,k]=rr(lx,lz);
   if(r<k-.035){return !inDr(lx,lz,.45)}
   if(r<k+.035)return false}
@@ -132,12 +142,13 @@ const _wh=walkH;walkH=function(x,z,...r){const lx=x-C.x,lz=z-C.z;
 /* animales y habitantes: la cueva (y su rampa) cuenta como obstáculo */
 const caveBlk=(x,z)=>{const lx=x-C.x,lz=z-C.z;if(Math.abs(lx)>RX*1.3||lz<-RZ*1.3||lz>RZ+14)return false;if(lz>RZ-3&&lz<RZ+12&&Math.abs(lx)<5.5)return true;const q=rr(lx,lz);return q[0]<q[1]+.12};
 const _ab=ablk;ablk=function(x,z){return caveBlk(x,z)||_ab(x,z)};
-/* --- cámara: nunca atraviesa roca ni dragón --- */
+/* --- cámara: nunca atraviesa roca, dragón ni el suelo de la cueva --- */
 const camBad=(x,y,z,pIn,pGap)=>{const lx=x-C.x,ly=y-C.y,lz=z-C.z;
  if(ly<5.6&&inDr(lx,lz,.55))return true;
  const u=lx/RX,v=ly/RY,w=lz/RZ,L=Math.sqrt(u*u+v*v+w*w);if(L>1.8||L<1e-6)return false;
  if(lz>RZ*.7&&Math.abs(lx)<5&&ly<6.2&&ly>-1)return false;
  const S_=L/kf(u/L,v/L,w/L);
+ if(pIn&&!pGap&&ly<.35&&S_<1.05)return true;
  if(pGap)return S_>.93&&S_<1.1;
  return pIn?S_>.93:S_<1.1};
 const camFix=(tx,ty,tz)=>{if(typeof UG!=='undefined'&&UG)return;if(phase!=='play')return;const cp=cam.position;
@@ -175,12 +186,16 @@ const _e=EXTRA;EXTRA=function(dt){_e(dt);try{const d=Math.hypot(p.x-C.x,p.z-C.z)
  fireGlow.material.opacity=.4*f+.05*DS.eye;fireGlow.scale.setScalar(8+f*8);
  for(const q of puffs){const ph=(t*.27+q.i/6)%1,s=q.i%2?1:-1;q.sp.matrixAutoUpdate=true;q.sp.position.set(2.2+s*.28+ph*.5,1.0+ph*2.4,9.5+ph*1.3);q.sp.scale.setScalar(.5+ph*2.3);q.sp.material.opacity=.32*Math.sin(Math.PI*ph)*(b>0?1:.35)*(DS.st==='sleep'?1:.4)}
  em.material.opacity=.2+.08*b+f*.4}catch(e){if(!window.__dgE){window.__dgE=1;console.error('[B41] dragón',e)}}};
-/* sacar a quien haya quedado atrapado dentro de la roca (animales y habitantes) */
+/* sacar a quien haya quedado atrapado dentro de la roca o de un obstáculo (animales y habitantes) */
 const ejL=()=>{const o=[];try{const L=lists();for(const l of L)for(const a of l)o.push(a)}catch(e){}try{for(const v of window.__BL.VIL)o.push(v)}catch(e){}try{for(const v of ELV)o.push(v)}catch(e){}return o};
 let ejT=0;const _e2=EXTRA;EXTRA=function(dt){_e2(dt);try{ejT+=dt;if(ejT<1.2)return;ejT=0;for(const a of ejL()){if(typeof a.x!=='number'||!caveBlk(a.x,a.z))continue;
  const lx=a.x-C.x,lz=a.z-C.z,n=Math.hypot(lx/RX,lz/RZ)||1,bx=C.x+lx/n/RX*RX*1.0*(1.25),bz=C.z+lz/n/RZ*RZ*1.0*(1.25);let nx=bx,nz_=bz;
  for(let k=0;k<12&&(caveBlk(nx,nz_)||ablk(nx,nz_));k++){const aa=Math.random()*TAU;nx=bx+Math.cos(aa)*(2+k);nz_=bz+Math.sin(aa)*(2+k)}
  a.x=nx;a.z=nz_;if(a.g)a.g.position.set(a.x,groundH(a.x,a.z),a.z);if(a.m&&a.m.position)a.m.position.set(a.x,groundH(a.x,a.z),a.z)}}catch(e){}};
+/* si el jugador quedó dentro de un obstáculo (p. ej. al cargar partida), sacarlo hacia la entrada */
+let pjT=0;const _e3=EXTRA;EXTRA=function(dt){_e3(dt);try{pjT+=dt;if(pjT<.5)return;pjT=0;if(phase!=='play'||(typeof UG!=='undefined'&&UG))return;
+ const lx=p.x-C.x,lz=p.z-C.z;if(Math.abs(lx)>RX*1.35||lz<-RZ*1.3||lz>RZ+12||gapZ(lx,lz))return;
+ if(inPR(lx,lz)||inDr(lx,lz,.2)){p.x=C.x;p.z=C.z+RZ+4}}catch(e){}};
 try{TIPS.push('Hay una cueva enorme en la isla. Al fondo duerme un dragón: a veces abre sus ojos de fuego, ruge o bosteza… ¡y se vuelve a dormir!')}catch(e){}
 window.__cave=C;console.log('[B41] cueva en',C.x.toFixed(0),C.z.toFixed(0));
 window.__caveAPI={C,caveBlk,fe,RX,RZ};
@@ -236,3 +251,4 @@ st('mapas',()=>{
  try{TIPS.push('Hay mapas secretos escondidos por la isla con misterios del mar, del espacio y del mundo. ¡Encuéntralos todos!')}catch(e){}
 });
 })();
+
